@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "pulse8-core-cli"
+version = "0.1.0"
+description = "Pulse8 Core Command Line Interface (CLI)"
+authors = ["Pulse8 Core Team"]
+readme = "README.md"
+
+
+[tool.poetry.scripts]
+pulse8 = "pulse8_core_cli.main:pulse8_cli"
+p8 = "pulse8_core_cli.main:pulse8_cli"
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+typer = {extras = ["all"], version = "^0.9.0"}
+rich = "^13.6.0"
+shellingham = "^1.5.3"
+
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
