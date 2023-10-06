@@ -45,3 +45,23 @@
         name: kubernetes-cli
         state: present
       when: ansible_facts['os_family'] == "Windows"
+- name: Install helm
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Install helm with apt (Debian-based Linux)
+      ansible.builtin.apt:
+        pkg:
+          - helm
+      when: ansible_facts['os_family'] == "Debian"
+    - name: Install helm with Homebrew (macOS)
+      community.general.homebrew:
+        name: helm
+        state: present
+        update_homebrew: true
+      when: ansible_facts['os_family'] == "Darwin"
+    - name: Install helm with chocolatey (Windows)
+      win_chocolatey:
+        name: kubernetes-helm
+        state: present
+      when: ansible_facts['os_family'] == "Windows"

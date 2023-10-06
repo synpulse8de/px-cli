@@ -38,3 +38,4 @@ pip install --user ./dist/pulse8_core_cli-X.Y.Z-py3-none-any.whl
 - devspace
 - pnpm
 - kubectl
+- helm
