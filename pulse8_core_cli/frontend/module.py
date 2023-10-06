@@ -22,3 +22,8 @@ def update():
 @app.command()
 def delete():
     print(f"[WIP]...")
+
+
+@app.command()
+def deploy():
+    print(f"[WIP]...")
