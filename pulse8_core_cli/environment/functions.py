@@ -1,10 +1,12 @@
 import os
 import subprocess
+
 import inquirer
 import yaml
 from rich import print
 
-
+ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
+ENV_GITHUB_USER = "GITHUB_USER"
 KEY_CHOICES_INFRA = "infra"
 KEY_CHOICES_INFRA_POSTGRESQL = "postgresql"
 KEY_CHOICES_INFRA_KAFKA = "kafka"
@@ -17,6 +19,17 @@ KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE = "pulse8-core-query-engine"
 KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE = "pulse8-core-workflow-engine"
 
 
+def env_precheck():
+    print("[bold]running environment precheck...[bold]")
+    try:
+        github_token = os.environ[ENV_GITHUB_TOKEN]
+        github_user = os.environ[ENV_GITHUB_USER]
+        print(f"[green]github authentication set to user {github_user}[/green]")
+        print("environment precheck done - continue...")
+    except KeyError:
+        print("[bold red]please set GITHUB_TOKEN and GITHUB_USER environment variables (more info: tbd)[/bold red]")
+        exit(1)
+
 def env_create(identifier: str):
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
     args = (f"k3d cluster create {identifier}")
@@ -28,21 +41,31 @@ def env_create(identifier: str):
         exit(1)
     print(f"[green]started environment (id: {identifier})[/green]")
     print(res[0].decode('ascii'))
+    print(f"installing flux into environment (id: {identifier})...")
+    args = ("flux install")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        print(f"[bold red]failed installing flux into environment (id: {identifier})[/bold red]")
+        print(res[1].decode('ascii'))
+        exit(1)
+    print(f"[green]installed flux into environment (id: {identifier})[/green]")
+    print(res[0].decode('ascii'))
     questions = [
         inquirer.Checkbox(
             name=KEY_CHOICES_INFRA,
             message="Which infrastructure do you need?",
             choices=[
                 ("PostgreSQL", KEY_CHOICES_INFRA_POSTGRESQL),
-                ("Kafka", KEY_CHOICES_INFRA_KAFKA),
+                ("Kafka (Confluent for Kubernetes)", KEY_CHOICES_INFRA_KAFKA),
                 ("Redis", KEY_CHOICES_INFRA_REDIS),
-                ("Exasol", KEY_CHOICES_INFRA_EXASOL),
+                # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
             ],
             default=[KEY_CHOICES_INFRA_POSTGRESQL, KEY_CHOICES_INFRA_KAFKA],
         ),
         inquirer.Checkbox(
             name=KEY_CHOICES_SERVICES_CORE,
-            message="Which [bold]Pulse8 Core[/bold] services do you need?",
+            message="Which Pulse8 Core services do you need?",
             choices=[
                 KEY_CHOICES_SERVICES_CORE_IAM,
                 KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE,
@@ -71,27 +94,103 @@ def env_create(identifier: str):
     env_install_choices(choices)
 
 
-def env_install_choices(choices: dict):
+def env_install_choices(choices: dict, choices_old: dict | None = None):
+    github_token = os.environ[ENV_GITHUB_TOKEN]
+    github_user = os.environ[ENV_GITHUB_USER]
     if KEY_CHOICES_INFRA in choices:
         infra = choices[KEY_CHOICES_INFRA]
         if KEY_CHOICES_INFRA_POSTGRESQL in infra:
-            print("[WIP]...")
+            print("Installing PostgreSQL using Flux...")
+            args = (f"""
+            flux create secret git github-token --url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git --username={github_user} --password={github_token} --namespace=flux-system ;
+            flux create source git pulse8-core-env-postgresql-repo --url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git --branch=main --secret-ref=github-token ;
+            flux create kustomization pulse8-core-env-postgresql --source=GitRepository/pulse8-core-env-postgresql-repo --interval=1m --target-namespace=default ;
+            """)
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install PostgreSQL using Flux[/bold red]")
+                print(res[1].decode('ascii'))
+                exit(1)
+            print(f"[green]Installed PostgreSQL using Flux[/green]")
+            print(res[0].decode('ascii'))
         if KEY_CHOICES_INFRA_KAFKA in infra:
-            print("[WIP]...")
+            print("Installing Kafka (Confluent for Kubernetes) using Flux...")
+            args = (f"""
+            flux create secret git github-token --url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git --username={github_user} --password={github_token} --namespace=flux-system ;
+            flux create source git pulse8-core-env-kafka-repo --url=https://github.com/synpulse-group/pulse8-core-env-kafka.git --branch=main --secret-ref=github-token ;
+            flux create kustomization pulse8-core-env-kafka --source=GitRepository/pulse8-core-env-kafka-repo --interval=1m --target-namespace=default ;
+            """)
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Kafka (Confluent for Kubernetes) using Flux[/bold red]")
+                print(res[1].decode('ascii'))
+                exit(1)
+            print(f"[green]Installed Kafka (Confluent for Kubernetes) using Flux[/green]")
+            print(res[0].decode('utf8'))
         if KEY_CHOICES_INFRA_REDIS in infra:
-            print("[WIP]...")
+            print("Installing Redis using Flux...")
+            args = (f"""
+            flux create secret git github-token --url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git --username={github_user} --password={github_token} --namespace=flux-system ;
+            flux create source git pulse8-core-env-redis-repo --url=https://github.com/synpulse-group/pulse8-core-env-redis.git --branch=main --secret-ref=github-token ;
+            flux create kustomization pulse8-core-env-redis --source=GitRepository/pulse8-core-env-redis-repo --interval=1m --target-namespace=default ;
+            """)
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Redis using Flux[/bold red]")
+                print(res[1].decode('ascii'))
+                exit(1)
+            print(f"[green]Installed Redis using Flux[/green]")
+            print(res[0].decode('ascii'))
         if KEY_CHOICES_INFRA_EXASOL in infra:
-            print("[WIP]...")
+            print("Deployment of Exasol infrastructure not yet implemented...")
     if KEY_CHOICES_SERVICES_CORE in choices:
         services_core = choices[KEY_CHOICES_SERVICES_CORE]
         if KEY_CHOICES_SERVICES_CORE_IAM in services_core:
-            print("[WIP]...")
+            print("Deployment of Pulse8 Core IAM not yet implemented...")
         if KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE in services_core:
-            print("[WIP]...")
+            print("Deployment of Pulse8 Core Notification Engine not yet implemented...")
         if KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE in services_core:
-            print("[WIP]...")
+            print("Deployment of Pulse8 Core Query Engine not yet implemented...")
         if KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE in services_core:
-            print("[WIP]...")
+            print("Deployment of Pulse8 Core Workflow Engine not yet implemented...")
+    if choices_old is not None:
+        if KEY_CHOICES_INFRA in choices_old:
+            if KEY_CHOICES_INFRA_POSTGRESQL not in choices and KEY_CHOICES_INFRA_POSTGRESQL in choices_old:
+                print("Uninstalling PostgreSQL using Flux...")
+                args = ("flux delete kustomization pulse8-core-env-postgresql")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall PostgreSQL using Flux[/bold red]")
+                    print(res[1].decode('ascii'))
+                    exit(1)
+                print(f"[green]Uninstalled PostgreSQL using Flux[/green]")
+                print(res[0].decode('ascii'))
+            if KEY_CHOICES_INFRA_KAFKA not in choices and KEY_CHOICES_INFRA_KAFKA in choices_old:
+                print("Uninstalling Kafka (Confluent for Kubernetes) using Flux...")
+                args = ("flux delete kustomization pulse8-core-env-kafka")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Kafka (Confluent for Kubernetes) using Flux[/bold red]")
+                    print(res[1].decode('ascii'))
+                    exit(1)
+                print(f"[green]Uninstalled Kafka (Confluent for Kubernetes) using Flux[/green]")
+                print(res[0].decode('ascii'))
+            if KEY_CHOICES_INFRA_REDIS not in choices and KEY_CHOICES_INFRA_REDIS in choices_old:
+                print("Uninstalling Redis using Flux...")
+                args = ("flux delete kustomization pulse8-core-env-redis")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Redis using Flux[/bold red]")
+                    print(res[1].decode('ascii'))
+                    exit(1)
+                print(f"[green]Uninstalled Redis using Flux[/green]")
+                print(res[0].decode('ascii'))
 
 
 def env_list():
