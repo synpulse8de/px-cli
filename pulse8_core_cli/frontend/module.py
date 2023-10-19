@@ -26,7 +26,7 @@ def create(
     os.system(
         'git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
 
-    print("Commited generated content. Happy coding!")
+    print("Committed generated content. Happy coding!")
 
 
 @app.command()
