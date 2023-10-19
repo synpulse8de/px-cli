@@ -16,8 +16,6 @@ def create(
     github_username: Annotated[str, typer.Option(
         prompt=True, confirmation_prompt=False, help="Synpulse github username")]
 ):
-
-    print("\n")
     print('Pulling latest template data...')
 
     run_copy(
@@ -26,7 +24,9 @@ def create(
     os.system("git init")
     os.system("git add .")
     os.system(
-        "git commit -m \"[PULSE8] Generated using Pulse8 Core Template\" ")
+        'git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
+
+    print("Commited generated content. Happy coding!")
 
 
 @app.command()
