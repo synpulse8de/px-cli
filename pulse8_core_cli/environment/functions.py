@@ -1,5 +1,7 @@
 import subprocess
 
+ENV_GITHUB_USER = "GITHUB_USER"
+
 
 def env_create(identifier: str):
     print(f"[bold green]starting a environment (id: {identifier})...[/bold green]")
