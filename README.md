@@ -27,7 +27,7 @@
 git clone https://github.com/synpulse-group/pulse8-core-cli.git
 cd pulse8-core-cli
 poetry install
-ansible-playbook ./dev-tools-playbook.yml
+ansible-playbook ./dev-tools-playbook.yml --ask-become-pass
 poetry build
 pip install --user ./dist/pulse8_core_cli-X.Y.Z-py3-none-any.whl
 ```
@@ -39,3 +39,4 @@ pip install --user ./dist/pulse8_core_cli-X.Y.Z-py3-none-any.whl
 - pnpm
 - kubectl
 - helm
+- flux

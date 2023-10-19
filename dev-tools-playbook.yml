@@ -65,3 +65,16 @@
         name: kubernetes-helm
         state: present
       when: ansible_facts['os_family'] == "Windows"
+- name: Install flux
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Install flux with curl (macOS and Linux)
+      ansible.builtin.shell: curl -s https://fluxcd.io/install.sh | bash
+      become: true
+      when: ansible_facts['os_family'] == "Debian" or ansible_facts['os_family'] == "Darwin"
+    - name: Install helm with chocolatey (Windows)
+      win_chocolatey:
+        name: flux
+        state: present
+      when: ansible_facts['os_family'] == "Windows"
