@@ -30,3 +30,8 @@ def update(answers_file: Annotated[str, typer.Option(help="Copier answers file p
 @app.command()
 def delete():
     print(f"[WIP]...")
+
+
+@app.command()
+def deploy():
+    print(f"[WIP]...")
