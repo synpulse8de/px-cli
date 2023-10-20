@@ -187,6 +187,20 @@ pyyaml-include = ">=1.2"
 questionary = ">=1.8.1"
 
 [[package]]
+name = "copier-templates-extensions"
+version = "0.3.0"
+description = "Special Jinja2 extension for Copier that allows to load extensions using file paths relative to the template root instead of Python dotted paths."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "copier-templates-extensions-0.3.0.tar.gz", hash = "sha256:48b3f5213ee913b931df40e4e9325b58b9c9a741f1052a7da1b247ed991f5150"},
+    {file = "copier_templates_extensions-0.3.0-py3-none-any.whl", hash = "sha256:733e709536e03768b1201c79525534d7fd153932cf764492a0396692e513f244"},
+]
+
+[package.dependencies]
+copier = ">=6"
+
+[[package]]
 name = "cryptography"
 version = "41.0.4"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
@@ -960,4 +974,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "c5543251e5f9d977ae381c00d4510259a3615dccd778e52aeabfd037424fca3f"
+content-hash = "02b7d7b828b2fbb6a2927f392b941b6da9fe6ce72bdb47fcd2234c894667c219"
