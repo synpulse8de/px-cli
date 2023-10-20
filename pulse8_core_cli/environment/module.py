@@ -1,7 +1,7 @@
 import typer
 from rich import print
 
-from pulse8_core_cli.environment.functions import env_create, env_list, env_switch, env_delete, env_precheck
+from pulse8_core_cli.environment.functions import env_create, env_list, env_switch, env_delete, env_update, env_precheck
 app = typer.Typer()
 
 
@@ -26,7 +26,7 @@ def switch(identifier: str):
 @app.command()
 def update():
     env_precheck()
-    print(f"[WIP]...")
+    env_update()
 
 
 @app.command()
