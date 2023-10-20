@@ -1,42 +1,44 @@
-import os
+import typer
 
 from copier import run_copy, run_update
+from rich import print
 
-from pulse8_core_cli.environment.functions import ENV_GITHUB_USER
+from pulse8_core_cli.environment.functions import ENV_GITHUB_USER, ENV_GITHUB_TOKEN
+from pulse8_core_cli.shared.module import git_init, get_env_variables, REPOSITORY_PRIVATE, REPOSITORY_INTERNAL, \
+    git_create_remote
 
 
-def backend_create(answers_file: str, defaults: bool, skip_answered: bool):
-    print('Starting project creation from template...')
+def backend_create(create_remote_repo: str, answers_file: str, defaults: bool, skip_answered: bool):
 
-    try:
-        github_user = os.environ[ENV_GITHUB_USER]
-    except KeyError:
-        print("Error: GITHUB_USER environment variable is not set")
-        exit(1)
+    env_variables = get_env_variables()
+    github_user = env_variables[ENV_GITHUB_USER]
+    github_token = env_variables[ENV_GITHUB_TOKEN]
 
-    print(f'Creating project for github user {github_user}')
+    if create_remote_repo is None:
+        create_remote_input = typer.prompt(
+            "Do you want to create private or internal repository ? [no/private/internal]")
 
-    worker = run_copy(f'https://{github_user}@github.com/synpulse-group/pulse8-core-backend-template.git',
-                      '.', unsafe=True, defaults=defaults, answers_file=answers_file, skip_answered=skip_answered)
+        if create_remote_input == REPOSITORY_PRIVATE or create_remote_input == REPOSITORY_INTERNAL:
+            create_remote_repo = create_remote_input
+    elif create_remote_repo != REPOSITORY_PRIVATE and create_remote_repo != REPOSITORY_INTERNAL:
+        create_remote_repo = None
 
-    project_id = worker.answers.user.get('project_id')
+    print("Pulling latest template data...")
 
-    os.system('git init')
-    os.system('git add .')
-    os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
-    os.system('git branch -M main')
+    worker = run_copy(
+        f"https://{github_user}:{github_token}@github.com/synpulse-group/pulse8-core-backend-template.git",
+        ".", unsafe=True, defaults=defaults, answers_file=answers_file, skip_answered=skip_answered)
 
-    print(f'Creating repository {project_id}')
+    project_id = worker.answers.user.get("project_id")
 
-    os.system(f'gh repo create {project_id} --private --source=. --remote=upstream')
-    os.system(f'git remote add origin https://github.com/{github_user}/{project_id}.git')
-    os.system('git push -u origin main')
-
-    print('Pushed generated project to newly created private repository. Happy coding!')
+    git_init()
+    git_create_remote(create_remote_repo, project_id, github_user, github_token)
 
 
 def backend_update(answers_file: str, defaults: bool, skip_answered: bool):
-    print('Pulling latest template data...')
+    print("Pulling latest template data...")
 
-    run_update('.', overwrite=True, unsafe=True, defaults=defaults,
+    run_update(".", overwrite=True, unsafe=True, defaults=defaults,
                answers_file=answers_file, skip_answered=skip_answered)
+
+    print("[green]Project successfully updated.[/green]")

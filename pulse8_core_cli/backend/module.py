@@ -13,10 +13,12 @@ def dev():
 
 @app.command()
 def create(answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
+           create_remote_repository: Annotated[str,
+           typer.Option(help="Create remote repository [options: no/private/internal]")] = None,
            defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
            skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = False):
 
-    backend_create(answers_file, defaults, skip_answered)
+    backend_create(create_remote_repository, answers_file, defaults, skip_answered)
 
 
 @app.command()
