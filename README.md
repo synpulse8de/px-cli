@@ -12,6 +12,7 @@
 - Build tools
   - Poetry (`pipx install poetry`)
   - Docker
+  - Ansible
 - Package manager
   - Homebrew (macOS) 
   - chocolatey (Windows) 
