@@ -1,7 +1,9 @@
 import typer
 import os
-from typing_extensions import Annotated
+
+from rich import print
 from copier import run_copy, run_update
+from pulse8_core_cli.environment.functions import ENV_GITHUB_USER, ENV_GITHUB_TOKEN
 
 app = typer.Typer()
 
@@ -12,21 +14,24 @@ def dev():
 
 
 @app.command()
-def create(
-    github_username: Annotated[str, typer.Option(
-        prompt=True, confirmation_prompt=False, help="Synpulse github username")]
-):
-    print('Pulling latest template data...')
+def create():
 
-    run_copy(
-        f"https://{github_username}@github.com/synpulse-group/pulse8-core-frontend-nextjs-template.git", ".")
+    try:
+        github_token = os.environ[ENV_GITHUB_TOKEN]
+        github_user = os.environ[ENV_GITHUB_USER]
+        print(f"[green]Github authentication set to user {github_user}[/green]")
+    except KeyError:
+        print("[bold red]Please set GITHUB_TOKEN and GITHUB_USER environment variables[/bold red]")
+        exit(1)
+
+    print('Pulling latest template data...')
+    run_copy(f"https://{github_user}:{github_token}@github.com/synpulse-group/pulse8-core-frontend-nextjs-template.git", ".")
 
     os.system("git init")
     os.system("git add .")
-    os.system(
-        'git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
+    os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
 
-    print("Committed generated content. Happy coding!")
+    print("[bold green]Committed generated content. Happy coding![/bold green]")
 
 
 @app.command()
