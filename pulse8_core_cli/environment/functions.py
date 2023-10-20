@@ -31,6 +31,7 @@ def env_precheck():
         print("[bold red]please set GITHUB_TOKEN and GITHUB_USER environment variables (more info: tbd)[/bold red]")
         exit(1)
 
+
 def env_create(identifier: str):
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
     args = (f"k3d cluster create {identifier}")
