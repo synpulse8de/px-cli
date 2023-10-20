@@ -1,5 +1,6 @@
 import subprocess
 
+ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
 ENV_GITHUB_USER = "GITHUB_USER"
 
 
