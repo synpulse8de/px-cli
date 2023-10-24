@@ -4,7 +4,10 @@ import subprocess
 
 import inquirer
 import yaml
+from inquirer import Checkbox
 from rich import print
+
+from pulse8_core_cli.util.platform_discovery import is_cpu_arm
 
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
 ENV_GITHUB_USER = "GITHUB_USER"
@@ -13,6 +16,7 @@ KEY_CHOICES_INFRA_POSTGRESQL = "postgresql"
 KEY_CHOICES_INFRA_KAFKA = "kafka"
 KEY_CHOICES_INFRA_REDIS = "redis"
 KEY_CHOICES_INFRA_EXASOL = "exasol"
+KEY_CHOICES_INFRA_TEEDY = "teedy"
 KEY_CHOICES_SERVICES_CORE = "services-core"
 KEY_CHOICES_SERVICES_CORE_IAM = "pulse8-core-iam"
 KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE = "pulse8-core-notfication-engine"
@@ -53,31 +57,7 @@ def env_create(identifier: str):
         exit(1)
     print(f"[green]installed flux into environment (id: {identifier})[/green]")
     print(res[0].decode('ascii'))
-    questions = [
-        inquirer.Checkbox(
-            name=KEY_CHOICES_INFRA,
-            message="Which infrastructure do you need?",
-            choices=[
-                ("PostgreSQL", KEY_CHOICES_INFRA_POSTGRESQL),
-                ("Kafka (Confluent for Kubernetes)", KEY_CHOICES_INFRA_KAFKA),
-                ("Redis", KEY_CHOICES_INFRA_REDIS),
-                # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
-            ],
-            default=[KEY_CHOICES_INFRA_POSTGRESQL, KEY_CHOICES_INFRA_KAFKA],
-        ),
-        inquirer.Checkbox(
-            name=KEY_CHOICES_SERVICES_CORE,
-            message="Which Pulse8 Core services do you need?",
-            choices=[
-                KEY_CHOICES_SERVICES_CORE_IAM,
-                KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE,
-                KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE,
-                KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE
-            ],
-            default=[KEY_CHOICES_SERVICES_CORE_IAM],
-        )
-    ]
-    choices = inquirer.prompt(questions)
+    choices = inquirer.prompt(get_questions())
     choices_yaml = yaml.dump(choices)
     choices_yaml_path = "choices.yaml"
     with open(choices_yaml_path, "w") as choices_yaml_file:
@@ -132,8 +112,10 @@ def env_update():
                 preselection_infra.append(KEY_CHOICES_INFRA_REDIS)
             if KEY_CHOICES_INFRA_KAFKA in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_KAFKA)
-            # if KEY_CHOICES_INFRA_EXASOL in choices_infra:
-            #     preselection_infra.append(KEY_CHOICES_INFRA_EXASOL)
+            if KEY_CHOICES_INFRA_EXASOL in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_EXASOL)
+            if KEY_CHOICES_INFRA_TEEDY in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_TEEDY)
         if KEY_CHOICES_SERVICES_CORE in choices_old:
             choices_services_core = choices_old[KEY_CHOICES_SERVICES_CORE]
             if KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE in choices_services_core:
@@ -144,31 +126,7 @@ def env_update():
                 preselection_services_core.append(KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE)
             if KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE in choices_services_core:
                 preselection_services_core.append(KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE)
-    questions = [
-        inquirer.Checkbox(
-            name=KEY_CHOICES_INFRA,
-            message="Which infrastructure do you need?",
-            choices=[
-                ("PostgreSQL", KEY_CHOICES_INFRA_POSTGRESQL),
-                ("Kafka (Confluent for Kubernetes)", KEY_CHOICES_INFRA_KAFKA),
-                ("Redis", KEY_CHOICES_INFRA_REDIS),
-                # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
-            ],
-            default=preselection_infra,
-        ),
-        inquirer.Checkbox(
-            name=KEY_CHOICES_SERVICES_CORE,
-            message="Which Pulse8 Core services do you need?",
-            choices=[
-                KEY_CHOICES_SERVICES_CORE_IAM,
-                KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE,
-                KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE,
-                KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE
-            ],
-            default=preselection_services_core,
-        )
-    ]
-    choices = inquirer.prompt(questions)
+    choices = inquirer.prompt(get_questions(preselection_infra, preselection_services_core))
     choices_yaml = yaml.dump(choices)
     choices_yaml_path = "choices.yaml"
     with open(choices_yaml_path, "w") as choices_yaml_file:
@@ -238,7 +196,35 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             print(f"[green]Installed Redis using Flux[/green]")
             print(res[0].decode('ascii'))
         if KEY_CHOICES_INFRA_EXASOL in infra:
-            print("Deployment of Exasol infrastructure not yet implemented...")
+            print("Installing Exasol using Flux...")
+            args = (f"""
+            flux create secret git github-token --url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git --username={github_user} --password={github_token} --namespace=flux-system ;
+            flux create source git pulse8-core-env-exasol-repo --url=https://github.com/synpulse-group/pulse8-core-env-exasol.git --branch=main --secret-ref=github-token ;
+            flux create kustomization pulse8-core-env-exasol --source=GitRepository/pulse8-core-env-exasol-repo --interval=1m --prune=true --target-namespace=default ;
+            """)
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Exasol using Flux[/bold red]")
+                print(res[1].decode('ascii'))
+                exit(1)
+            print(f"[green]Installed Exasol using Flux[/green]")
+            print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_TEEDY in infra:
+            print("Installing Teedy using Flux...")
+            args = (f"""
+            flux create secret git github-token --url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git --username={github_user} --password={github_token} --namespace=flux-system ;
+            flux create source git pulse8-core-env-teedy-repo --url=https://github.com/synpulse-group/pulse8-core-env-teedy.git --branch=main --secret-ref=github-token ;
+            flux create kustomization pulse8-core-env-teedy --source=GitRepository/pulse8-core-env-teedy-repo --interval=1m --prune=true --target-namespace=default ;
+            """)
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Teedy using Flux[/bold red]")
+                print(res[1].decode('ascii'))
+                exit(1)
+            print(f"[green]Installed Teedy using Flux[/green]")
+            print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES_CORE in choices:
         services_core = choices[KEY_CHOICES_SERVICES_CORE]
         if KEY_CHOICES_SERVICES_CORE_IAM in services_core:
@@ -295,6 +281,34 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                     exit(1)
                 print(f"[green]Uninstalled Redis using Flux[/green]")
                 print(res[0].decode('ascii'))
+            if KEY_CHOICES_INFRA_EXASOL not in choices_infra and KEY_CHOICES_INFRA_EXASOL in choices_infra_old:
+                print("Uninstalling Exasol using Flux...")
+                args = (f"""
+                flux delete source git pulse8-core-env-exasol-repo -s ;
+                flux delete kustomization pulse8-core-env-exasol -s
+                """)
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Exasol using Flux[/bold red]")
+                    print(res[1].decode('ascii'))
+                    exit(1)
+                print(f"[green]Uninstalled Exasol using Flux[/green]")
+                print(res[0].decode('ascii'))
+            if KEY_CHOICES_INFRA_TEEDY not in choices_infra and KEY_CHOICES_INFRA_TEEDY in choices_infra_old:
+                print("Uninstalling Teedy using Flux...")
+                args = (f"""
+                flux delete source git pulse8-core-env-teedy-repo -s ;
+                flux delete kustomization pulse8-core-env-teedy -s
+                """)
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Teedy using Flux[/bold red]")
+                    print(res[1].decode('ascii'))
+                    exit(1)
+                print(f"[green]Uninstalled Teedy using Flux[/green]")
+                print(res[0].decode('ascii'))
 
 
 def env_list():
@@ -333,3 +347,48 @@ def env_delete(identifier: str):
     popen.wait()
     output = popen.stdout.read()
     print(output.decode('ascii'))
+
+
+def get_questions(preselection_infra: list[str] = None,
+                  preselection_services_core: list[str] = None) -> list[Checkbox]:
+    if preselection_infra is None:
+        preselection_infra = [KEY_CHOICES_INFRA_POSTGRESQL, KEY_CHOICES_INFRA_KAFKA]
+    if preselection_services_core is None:
+        preselection_services_core = [KEY_CHOICES_SERVICES_CORE_IAM]
+    if is_cpu_arm:
+        choices_infra = [
+            ("PostgreSQL", KEY_CHOICES_INFRA_POSTGRESQL),
+            ("Kafka (Confluent for Kubernetes)", KEY_CHOICES_INFRA_KAFKA),
+            ("Redis", KEY_CHOICES_INFRA_REDIS),
+            # not supported on arm64 - maybe bring proxy solution in place
+            # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
+            ("Teedy", KEY_CHOICES_INFRA_TEEDY),
+        ]
+    else:
+        choices_infra = [
+            ("PostgreSQL", KEY_CHOICES_INFRA_POSTGRESQL),
+            ("Kafka (Confluent for Kubernetes)", KEY_CHOICES_INFRA_KAFKA),
+            ("Redis", KEY_CHOICES_INFRA_REDIS),
+            ("Exasol", KEY_CHOICES_INFRA_EXASOL),
+            ("Teedy", KEY_CHOICES_INFRA_TEEDY),
+        ]
+    questions = [
+        inquirer.Checkbox(
+            name=KEY_CHOICES_INFRA,
+            message="Which infrastructure do you need?",
+            choices=choices_infra,
+            default=preselection_infra
+        ),
+        inquirer.Checkbox(
+            name=KEY_CHOICES_SERVICES_CORE,
+            message="Which Pulse8 Core services do you need?",
+            choices=[
+                KEY_CHOICES_SERVICES_CORE_IAM,
+                KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE,
+                KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE,
+                KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE
+            ],
+            default=preselection_services_core,
+        )
+    ]
+    return questions
