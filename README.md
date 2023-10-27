@@ -62,13 +62,10 @@ poetry build
 pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl
 ```
 
-Hint: `pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl --force-reinstall` if you want to proper reinstall after changes
+#### Hint: 
+if you want to clean reinstall after changes:
 
-## 💾 Ansible provided tools
-
-- k3d
-- devspace
-- pnpm
-- kubectl
-- helm
-- flux
+```bash
+poetry build
+pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl --force-reinstall
+```
