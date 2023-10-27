@@ -13,7 +13,7 @@
 - Package manager
   - Homebrew (macOS) 
   - chocolatey (Windows) 
-  - apt (Linux Debian-based)
+  - snap (Ubuntu)
 
 ---
 
@@ -29,25 +29,25 @@
 7. Install helm `brew install helm`
 8. Install flux `brew install fluxcd/tap/flux`
 
-### Windows [WIP]
-1. Install pipx
-2. Install Poetry
-3. Install k3d
+### Windows
+1. Install pipx `py -3 -m pip install --user pipx; py -3 -m pipx ensurepath`
+2. Install Poetry `pipx install poetry`
+3. Install k3d `choco install k3d`
 4. Install devspace `npm install -g devspace`
 5. Install pnpm `npm install -g pnpm`
-6. Install kubectl
-7. Install helm
-8. Install flux
+6. Install kubectl `choco install kubernetes-cli`
+7. Install helm `choco install kubernetes-helm`
+8. Install flux `choco install flux`
 
-### Ubuntu [WIP]
-1. Install pipx
-2. Install Poetry
-3. Install k3d
+### Ubuntu
+1. Install pipx `python3 -m pip install --user pipx && python3 -m pipx ensurepath`
+2. Install Poetry `pipx install poetry`
+3. Install k3d `curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash`
 4. Install devspace `npm install -g devspace`
 5. Install pnpm `npm install -g pnpm`
-6. Install kubectl
-7. Install helm
-8. Install flux
+6. Install kubectl `sudo snap install kubectl --classic`
+7. Install helm `sudo snap install helm --classic`
+8. Install flux `curl -s https://fluxcd.io/install.sh | sudo bash`
 
 
 ## 🛠 Installation & Set Up
