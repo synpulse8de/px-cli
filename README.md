@@ -8,17 +8,47 @@
 
 - Runtimes
   - Python 3.11+
-  - NodeJS (`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash`)
-- Build tools
-  - Poetry (`pipx install poetry`)
-  - Docker
-  - Ansible
+  - NodeJS 18.x+ (`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash`)
+  - Docker 20.10.5+
 - Package manager
   - Homebrew (macOS) 
   - chocolatey (Windows) 
-  - apt (Linux Debian-based)
+  - snap (Ubuntu)
 
 ---
+
+## 🛫 Requirements installation
+
+### macOS
+1. Install pipx `brew install pipx && pipx ensurepath`
+2. Install Poetry `pipx install poetry`
+3. Install k3d `brew install k3d`
+4. Install devspace `npm install -g devspace`
+5. Install pnpm `npm install -g pnpm`
+6. Install kubectl `brew install kubernetes-cli`
+7. Install helm `brew install helm`
+8. Install flux `brew install fluxcd/tap/flux`
+
+### Windows
+1. Install pipx `py -3 -m pip install --user pipx; py -3 -m pipx ensurepath`
+2. Install Poetry `pipx install poetry`
+3. Install k3d `choco install k3d`
+4. Install devspace `npm install -g devspace`
+5. Install pnpm `npm install -g pnpm`
+6. Install kubectl `choco install kubernetes-cli`
+7. Install helm `choco install kubernetes-helm`
+8. Install flux `choco install flux`
+
+### Ubuntu
+1. Install pipx `python3 -m pip install --user pipx && python3 -m pipx ensurepath`
+2. Install Poetry `pipx install poetry`
+3. Install k3d `curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash`
+4. Install devspace `npm install -g devspace`
+5. Install pnpm `npm install -g pnpm`
+6. Install kubectl `sudo snap install kubectl --classic`
+7. Install helm `sudo snap install helm --classic`
+8. Install flux `curl -s https://fluxcd.io/install.sh | sudo bash`
+
 
 ## 🛠 Installation & Set Up
 
@@ -28,16 +58,14 @@
 git clone https://github.com/synpulse-group/pulse8-core-cli.git
 cd pulse8-core-cli
 poetry install
-ansible-playbook ./dev-tools-playbook.yml --ask-become-pass
 poetry build
-pip install --user ./dist/pulse8_core_cli-X.Y.Z-py3-none-any.whl
+pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl
 ```
 
-## 💾 Ansible provided tools
+#### Hint: 
+if you want to clean reinstall after changes:
 
-- k3d
-- devspace
-- pnpm
-- kubectl
-- helm
-- flux
+```bash
+poetry build
+pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl --force-reinstall
+```
