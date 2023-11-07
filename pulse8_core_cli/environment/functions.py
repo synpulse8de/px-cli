@@ -439,6 +439,13 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                     exit(1)
                 print(f"[green]Uninstalled Teedy using Flux[/green]")
                 print(res[0].decode('utf8'))
+        if KEY_CHOICES_SERVICES_CORE in choices_old:
+            choices_services_core = choices[KEY_CHOICES_SERVICES_CORE]
+            choices_services_core_old = choices_old[KEY_CHOICES_SERVICES_CORE]
+            for service_core_old_key in choices_services_core_old:
+                if service_core_old_key not in choices_services_core:
+                    uninstall_service(service_core_old_key)
+
 
 
 def env_list():
@@ -568,3 +575,26 @@ def install_service(service_key: str) -> None:
         exit(1)
     print(res[0].decode('utf8'))
     print(f"[green]Installed {SERVICES[service_key][0]} ({service_key}) using Flux[/green]")
+
+
+def uninstall_service(service_key: str) -> None:
+    print(f"Uninstalling {SERVICES[service_key][0]} ({service_key}) using Flux...")
+    args = ("flux", "delete", "source", "git", f"{service_key}-repo", "-s")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        print(f"[bold red]Failed to uninstall {SERVICES[service_key][0]} ({service_key}) git source using Flux"
+              f"[/bold red]")
+        print(res[1].decode('utf8'))
+        exit(1)
+    print(res[0].decode('utf8'))
+    print(f"[green]Uninstalled {SERVICES[service_key][0]} ({service_key}) git source using Flux[/green]")
+    args = ("flux", "delete", "kustomization", f"{service_key}", "-s")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        print(f"[bold red]Failed to uninstall {SERVICES[service_key][0]} ({service_key}) using Flux[/bold red]")
+        print(res[1].decode('utf8'))
+        exit(1)
+    print(res[0].decode('utf8'))
+    print(f"[green]Uninstalled {SERVICES[service_key][0]} ({service_key}) using Flux[/green]")
