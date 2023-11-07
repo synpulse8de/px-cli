@@ -8,6 +8,9 @@ app = typer.Typer()
 
 @app.command()
 def dev():
+    """
+    Develop on an existing frontend
+    """
     print(f"[WIP]...")
 
 
@@ -19,6 +22,9 @@ def create(answers_file: Annotated[str, typer.Option(help="Copier answers file p
            skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = False,
            folder_name: str = typer.Argument(None, help="Folder name for your project.")
            ):
+    """
+    Create a new frontend
+    """
     frontend_angular_create(create_remote_repository, answers_file, defaults, skip_answered, folder_name)
 
 
@@ -28,14 +34,23 @@ def update(
         defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
         skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = True
 ):
+    """
+    Update an existing frontend
+    """
     frontend_angular_update(answers_file, defaults, skip_answered)
 
 
 @app.command()
 def delete():
+    """
+    Delete an existing frontend
+    """
     print(f"[WIP]...")
 
 
 @app.command()
 def deploy():
+    """
+    Start the deployment workflow for an existing frontend
+    """
     print(f"[WIP]...")

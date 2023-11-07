@@ -7,27 +7,32 @@ from pulse8_core_cli.backend_fastapi import module as backend_fastapi_module
 from pulse8_core_cli.frontend import module as frontend_module
 from pulse8_core_cli.frontend_angular import module as frontend_angular_module
 
-pulse8_cli = typer.Typer()
+pulse8_cli = typer.Typer(no_args_is_help=True)
 
 
-pulse8_cli.add_typer(auth_module.app, name="auth")
+pulse8_cli.add_typer(auth_module.app, name="auth",
+                     help="Manage Authentication (Synpulse8 infrastructure)",
+                     no_args_is_help=True)
 
-pulse8_cli.add_typer(backend_module.app, name="backend")
-# pulse8_cli.add_typer(backend.app, name="be")
-# pulse8_cli.add_typer(backend.app, name="spring")
+pulse8_cli.add_typer(backend_module.app, name="backend",
+                     help="Manage Pulse8 Spring Boot backends",
+                     no_args_is_help=True)
 
-pulse8_cli.add_typer(backend_fastapi_module.app, name="backend-fastapi")
-# pulse8_cli.add_typer(backend_fastapi.app, name="fastapi")
+pulse8_cli.add_typer(backend_fastapi_module.app, name="backend-fastapi",
+                     help="Manage Pulse8 FastAPI backends",
+                     no_args_is_help=True)
 
-pulse8_cli.add_typer(environment_module.app, name="environment")
-# pulse8_cli.add_typer(environment.app, name="env")
+pulse8_cli.add_typer(environment_module.app, name="environment",
+                     help="Manage Pulse8 environments",
+                     no_args_is_help=True)
 
-pulse8_cli.add_typer(frontend_module.app, name="frontend")
-# pulse8_cli.add_typer(frontend.app, name="fe")
-# pulse8_cli.add_typer(frontend.app, name="nextjs")
+pulse8_cli.add_typer(frontend_module.app, name="frontend",
+                     help="Manage Pulse8 NextJS frontends",
+                     no_args_is_help=True)
 
-pulse8_cli.add_typer(frontend_angular_module.app, name="frontend-angular")
-# pulse8_cli.add_typer(frontend_angular.app, name="ng")
+pulse8_cli.add_typer(frontend_angular_module.app, name="frontend-angular",
+                     help="Manage Pulse8 Angular frontends",
+                     no_args_is_help=True)
 
 
 if __name__ == "__main__":
