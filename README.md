@@ -69,3 +69,10 @@ if you want to clean reinstall after changes:
 poetry build
 pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl --force-reinstall
 ```
+
+## 🚗 Usage
+
+Run using the main command (for help and available commands use `--help`):
+```bash
+pulse8
+```
