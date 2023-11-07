@@ -10,12 +10,17 @@ app = typer.Typer()
 
 @app.command()
 def dev():
+    """
+    Develop on an existing frontend
+    """
     print(f"[WIP]...")
 
 
 @app.command()
 def create():
-
+    """
+    Create a new frontend
+    """
     try:
         github_token = os.environ[ENV_GITHUB_TOKEN]
         github_user = os.environ[ENV_GITHUB_USER]
@@ -36,15 +41,24 @@ def create():
 
 @app.command()
 def update():
+    """
+    Update an existing frontend
+    """
     print('Pulling latest template data...')
     run_update('.', overwrite=True)
 
 
 @app.command()
 def delete():
+    """
+    Delete an existing frontend
+    """
     print(f"[WIP]...")
 
 
 @app.command()
 def deploy():
+    """
+    Start the deployment workflow for an existing frontend
+    """
     print(f"[WIP]...")

@@ -8,6 +8,9 @@ app = typer.Typer()
 
 @app.command()
 def dev():
+    """
+    Develop on an existing backend
+    """
     print(f"[WIP]...")
 
 
@@ -17,7 +20,9 @@ def create(answers_file: Annotated[str, typer.Option(help="Copier answers file p
            typer.Option(help="Create remote repository [options: no/private/internal]")] = None,
            defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
            skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = False):
-
+    """
+    Create a new backend
+    """
     backend_create(create_remote_repository, answers_file, defaults, skip_answered)
 
 
@@ -25,15 +30,23 @@ def create(answers_file: Annotated[str, typer.Option(help="Copier answers file p
 def update(answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
            defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
            skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = True):
-
+    """
+    Update an existing backend
+    """
     backend_update(answers_file, defaults, skip_answered)
 
 
 @app.command()
 def delete():
+    """
+    Delete an existing backend
+    """
     print(f"[WIP]...")
 
 
 @app.command()
 def deploy():
+    """
+    Start the deployment workflow for an existing backend
+    """
     print(f"[WIP]...")

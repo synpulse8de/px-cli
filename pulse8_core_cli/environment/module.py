@@ -7,29 +7,44 @@ app = typer.Typer()
 
 @app.command()
 def create(identifier: str):
+    """
+    Creates a new environment
+    """
     env_precheck()
     env_create(identifier=identifier)
 
 
 @app.command()
 def list():
+    """
+    List all environments
+    """
     env_precheck()
     env_list()
 
 
 @app.command()
 def switch(identifier: str):
+    """
+    Switch to given environment
+    """
     env_precheck()
     env_switch(identifier=identifier)
 
 
 @app.command()
 def update():
+    """
+    Update settings of current environment
+    """
     env_precheck()
     env_update()
 
 
 @app.command()
 def delete(identifier: str):
+    """
+    Delete environment
+    """
     env_precheck()
     env_delete(identifier=identifier)
