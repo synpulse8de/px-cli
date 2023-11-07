@@ -28,6 +28,7 @@
 6. Install kubectl `brew install kubernetes-cli`
 7. Install helm `brew install helm`
 8. Install flux `brew install fluxcd/tap/flux`
+9. Install GitHub CLI `brew install gh`
 
 ### Windows
 1. Install pipx `py -3 -m pip install --user pipx; py -3 -m pipx ensurepath`
@@ -38,6 +39,7 @@
 6. Install kubectl `choco install kubernetes-cli`
 7. Install helm `choco install kubernetes-helm`
 8. Install flux `choco install flux`
+9. Install GitHub CLI `choco install gh`
 
 ### Ubuntu
 1. Install pipx `python3 -m pip install --user pipx && python3 -m pipx ensurepath`
@@ -48,6 +50,15 @@
 6. Install kubectl `sudo snap install kubectl --classic`
 7. Install helm `sudo snap install helm --classic`
 8. Install flux `curl -s https://fluxcd.io/install.sh | sudo bash`
+9. Install GitHub CLI 
+```bash
+type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+&& sudo apt update \
+&& sudo apt install gh -y
+```
 
 
 ## 🛠 Installation & Set Up
