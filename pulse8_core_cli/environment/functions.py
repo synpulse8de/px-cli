@@ -43,20 +43,20 @@ def env_create(identifier: str):
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]failed starting environment (id: {identifier})[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
     print(f"[green]started environment (id: {identifier})[/green]")
-    print(res[0].decode('ascii'))
+    print(res[0].decode('utf-8'))
     print(f"installing flux into environment (id: {identifier})...")
     args = ("flux", "install")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]failed installing flux into environment (id: {identifier})[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
     print(f"[green]installed flux into environment (id: {identifier})[/green]")
-    print(res[0].decode('ascii'))
+    print(res[0].decode('utf-8'))
     choices = inquirer.prompt(get_questions())
     choices_yaml = yaml.dump(choices)
     choices_yaml_path = "choices.yaml"
@@ -68,10 +68,10 @@ def env_create(identifier: str):
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]failed to save into configmap pulse8-core-cli-config[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
     print(f"[green]saved choices into configmap pulse8-core-cli-config[/green]")
-    print(res[0].decode('ascii'))
+    print(res[0].decode('utf-8'))
     os.remove(choices_yaml_path)
     env_install_choices(choices)
 
@@ -83,9 +83,9 @@ def env_update():
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]failed collecting information - sandbox name[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
-    identifier = res[0].decode('ascii')
+    identifier = res[0].decode('utf-8')
     identifier = re.sub(r"^k3d-", "", identifier)
     identifier = re.sub(r"\s", "", identifier)
     args = ("kubectl", "--namespace", "default", "get", "configmap", "pulse8-core-cli-config", "-o", "yaml")
@@ -93,9 +93,9 @@ def env_update():
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]failed collecting information - previous configuration[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
-    configmap_raw = res[0].decode('ascii')
+    configmap_raw = res[0].decode('utf-8')
     configmap = yaml.load(configmap_raw, yaml.Loader)
     choices_old = yaml.load(configmap['data']['choices.yaml'], yaml.Loader)
     print(choices_old)
@@ -137,18 +137,18 @@ def env_update():
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]failed to delete previous configmap pulse8-core-cli-config[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
-    print(res[0].decode('ascii'))
+    print(res[0].decode('utf-8'))
     args = ("kubectl", "create", "configmap", "pulse8-core-cli-config", "--from-file=choices.yaml")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]failed to save into configmap pulse8-core-cli-config[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
     print(f"[green]saved choices into configmap pulse8-core-cli-config[/green]")
-    print(res[0].decode('ascii'))
+    print(res[0].decode('utf-8'))
     os.remove(choices_yaml_path)
     env_install_choices(choices=choices, choices_old=choices_old)
 
@@ -162,10 +162,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]Failed to install GitHub token using Flux[/bold red]")
-        print(res[1].decode('ascii'))
+        print(res[1].decode('utf-8'))
         exit(1)
     print(f"[green]Installed GitHub token using Flux[/green]")
-    print(res[0].decode('ascii'))
+    print(res[0].decode('utf-8'))
     if KEY_CHOICES_INFRA in choices:
         infra = choices[KEY_CHOICES_INFRA]
         if KEY_CHOICES_INFRA_POSTGRESQL in infra:
@@ -177,10 +177,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install PostgreSQL git source using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed PostgreSQL git source using Flux[/green]")
-            print(res[0].decode('ascii'))
+            print(res[0].decode('utf-8'))
             args = ("flux", "create", "kustomization", "pulse8-core-env-postgresql",
                     "--source=GitRepository/pulse8-core-env-postgresql-repo", "--interval=1m", "--prune=true",
                     "--target-namespace=default")
@@ -188,10 +188,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install PostgreSQL using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed PostgreSQL using Flux[/green]")
-            print(res[0].decode('ascii'))
+            print(res[0].decode('utf-8'))
         if KEY_CHOICES_INFRA_KAFKA in infra:
             print("Installing Kafka (Confluent for Kubernetes) using Flux...")
             args = ("flux", "create", "source", "git", "pulse8-core-env-kafka-repo",
@@ -201,10 +201,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Kafka git source using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Kafka git source using Flux[/green]")
-            print(res[0].decode('ascii'))
+            print(res[0].decode('utf-8'))
             args = ("flux", "create", "kustomization", "pulse8-core-env-kafka",
                     "--source=GitRepository/pulse8-core-env-kafka-repo", "--interval=1m", "--prune=true",
                     "--target-namespace=default")
@@ -212,7 +212,7 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Kafka (Confluent for Kubernetes) using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Kafka (Confluent for Kubernetes) using Flux[/green]")
             print(res[0].decode('utf8'))
@@ -225,10 +225,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Redis git source using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Redis git source using Flux[/green]")
-            print(res[0].decode('ascii'))
+            print(res[0].decode('utf-8'))
             args = ("flux", "create", "kustomization", "pulse8-core-env-redis",
                     "--source=GitRepository/pulse8-core-env-redis-repo", "--interval=1m", "--prune=true",
                     "--target-namespace=default")
@@ -236,10 +236,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Redis using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Redis using Flux[/green]")
-            print(res[0].decode('ascii'))
+            print(res[0].decode('utf-8'))
         if KEY_CHOICES_INFRA_EXASOL in infra:
             print("Installing Exasol using Flux...")
             args = ("flux", "create", "source", "git", "pulse8-core-env-exasol-repo",
@@ -249,10 +249,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Exasol git source using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Exasol git source using Flux[/green]")
-            print(res[0].decode('ascii'))
+            print(res[0].decode('utf-8'))
             args = ("flux", "create", "kustomization", "pulse8-core-env-exasol",
                     "--source=GitRepository/pulse8-core-env-exasol-repo", "--interval=1m", "--prune=true",
                     "--target-namespace=default")
@@ -260,7 +260,7 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Exasol using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Exasol using Flux[/green]")
             print(res[0].decode('utf8'))
@@ -273,10 +273,10 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Teedy git source using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Teedy git source using Flux[/green]")
-            print(res[0].decode('ascii'))
+            print(res[0].decode('utf-8'))
             args = ("flux", "create", "kustomization", "pulse8-core-env-teedy",
                     "--source=GitRepository/pulse8-core-env-teedy-repo", "--interval=1m", "--prune=true",
                     "--target-namespace=default")
@@ -284,7 +284,7 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Teedy using Flux[/bold red]")
-                print(res[1].decode('ascii'))
+                print(res[1].decode('utf-8'))
                 exit(1)
             print(f"[green]Installed Teedy using Flux[/green]")
             print(res[0].decode('utf8'))
@@ -309,18 +309,18 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall PostgreSQL git source using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
                 args = ("flux", "delete", "kustomization", "pulse8-core-env-postgresql", "-s")
                 pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall PostgreSQL using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
                 print(f"[green]Uninstalled PostgreSQL using Flux[/green]")
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
             if KEY_CHOICES_INFRA_KAFKA not in choices_infra and KEY_CHOICES_INFRA_KAFKA in choices_infra_old:
                 print("Uninstalling Kafka (Confluent for Kubernetes) using Flux...")
                 args = ("flux", "delete", "source", "git", "pulse8-core-env-kafka-repo", "-s")
@@ -328,18 +328,18 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Kafka (Confluent for Kubernetes) git source using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
                 args = ("flux", "delete", "kustomization", "pulse8-core-env-kafka", "-s")
                 pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Kafka (Confluent for Kubernetes) using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
                 print(f"[green]Uninstalled Kafka (Confluent for Kubernetes) using Flux[/green]")
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
             if KEY_CHOICES_INFRA_REDIS not in choices_infra and KEY_CHOICES_INFRA_REDIS in choices_infra_old:
                 print("Uninstalling Redis using Flux...")
                 args = ("flux", "delete", "source", "git", "pulse8-core-env-redis-repo", "-s")
@@ -347,18 +347,18 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Redis git source using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
                 args = ("flux", "delete", "kustomization", "pulse8-core-env-redis", "-s")
                 pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Redis using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
                 print(f"[green]Uninstalled Redis using Flux[/green]")
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
             if KEY_CHOICES_INFRA_EXASOL not in choices_infra and KEY_CHOICES_INFRA_EXASOL in choices_infra_old:
                 print("Uninstalling Exasol using Flux...")
                 args = ("flux", "delete", "source", "git", "pulse8-core-env-exasol-repo", "-s")
@@ -366,18 +366,18 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Exasol git source using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
                 args = ("flux", "delete", "kustomization", "pulse8-core-env-exasol", "-s")
                 pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Exasol using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
                 print(f"[green]Uninstalled Exasol using Flux[/green]")
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
             if KEY_CHOICES_INFRA_TEEDY not in choices_infra and KEY_CHOICES_INFRA_TEEDY in choices_infra_old:
                 print("Uninstalling Teedy using Flux...")
                 args = ("flux", "delete", "source", "git", "pulse8-core-env-teedy-repo", "-s")
@@ -385,18 +385,18 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Teedy git source using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
                 args = ("flux", "delete", "kustomization", "pulse8-core-env-teedy", "-s")
                 pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
                     print(f"[bold red]Failed to uninstall Teedy using Flux[/bold red]")
-                    print(res[1].decode('ascii'))
+                    print(res[1].decode('utf-8'))
                     exit(1)
                 print(f"[green]Uninstalled Teedy using Flux[/green]")
-                print(res[0].decode('ascii'))
+                print(res[0].decode('utf-8'))
 
 
 def env_list():
@@ -404,7 +404,7 @@ def env_list():
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
     popen.wait()
     output = popen.stdout.read()
-    print(output.decode('ascii'))
+    print(output.decode('utf-8'))
 
 
 def env_switch(identifier: str):
@@ -413,19 +413,19 @@ def env_switch(identifier: str):
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
     popen.wait()
     output = popen.stdout.read()
-    print(output.decode('ascii'))
+    print(output.decode('utf-8'))
     print(f"[bold]starting target environment (id: {identifier})...[/bold]")
     args = ("k3d", "cluster", "start", f"{identifier}")
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
     popen.wait()
     output = popen.stdout.read()
-    print(output.decode('ascii'))
+    print(output.decode('utf-8'))
     print(f"[green]switching to target environment context in kubeconfig (id: {identifier})...[/green]")
     args = ("kubectl", "config", "use-context", f"k3d-{identifier}")
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
     popen.wait()
     output = popen.stdout.read()
-    print(output.decode('ascii'))
+    print(output.decode('utf-8'))
 
 
 def env_delete(identifier: str):
@@ -434,7 +434,7 @@ def env_delete(identifier: str):
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
     popen.wait()
     output = popen.stdout.read()
-    print(output.decode('ascii'))
+    print(output.decode('utf-8'))
 
 
 def get_questions(preselection_infra: list[str] = None,

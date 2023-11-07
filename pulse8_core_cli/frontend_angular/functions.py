@@ -30,14 +30,14 @@ def frontend_angular_create(create_remote_repo: str, answers_file: str, defaults
     print("Pulling latest template data...")
 
     worker = run_copy(
-        f"https://{github_user}:{github_token}@github.com/synpulse-group/pulse8-core-backend-template.git",
+        f"https://{github_user}:{github_token}@github.com/synpulse-group/pulse8-core-frontend-angular-template.git",
         folder_name, unsafe=True, defaults=defaults, answers_file=answers_file, skip_answered=skip_answered)
 
     project_id = worker.answers.user.get("project_id")
 
     os.chdir(folder_name)
     os.system("pnpm install")
-    os.system("husky install")
+    # os.system("husky install")
 
     git_init()
     git_create_remote(create_remote_repo, project_id, github_user, github_token)
