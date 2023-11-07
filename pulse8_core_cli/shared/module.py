@@ -1,8 +1,9 @@
 import os
 from rich import print
 
-from pulse8_core_cli.environment.functions import ENV_GITHUB_USER, ENV_GITHUB_TOKEN
-
+ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
+ENV_GITHUB_USER = "GITHUB_USER"
+ENV_JFROG_TOKEN = "JFROG_TOKEN"
 REPOSITORY_PRIVATE: str = "private"
 REPOSITORY_INTERNAL: str = "internal"
 
