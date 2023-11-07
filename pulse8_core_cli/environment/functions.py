@@ -447,7 +447,6 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
                     uninstall_service(service_core_old_key)
 
 
-
 def env_list():
     args = ("k3d", "cluster", "list")
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
