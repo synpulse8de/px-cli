@@ -29,6 +29,7 @@
 7. Install helm `brew install helm`
 8. Install flux `brew install fluxcd/tap/flux`
 9. Install GitHub CLI `brew install gh`
+10. Install mkcert `brew install mkcert && brew install nss`
 
 ### Windows
 1. Install pipx `py -3 -m pip install --user pipx; py -3 -m pipx ensurepath`
@@ -40,6 +41,7 @@
 7. Install helm `choco install kubernetes-helm`
 8. Install flux `choco install flux`
 9. Install GitHub CLI `choco install gh`
+10. Install mkcert `choco install mkcert`
 
 ### Ubuntu
 1. Install pipx `python3 -m pip install --user pipx && python3 -m pipx ensurepath`
@@ -51,6 +53,7 @@
 7. Install helm `sudo snap install helm --classic`
 8. Install flux `curl -s https://fluxcd.io/install.sh | sudo bash`
 9. Install GitHub CLI https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+10. Install mkcert https://github.com/FiloSottile/mkcert#linux
 
 
 ## 🛠 Installation & Set Up
