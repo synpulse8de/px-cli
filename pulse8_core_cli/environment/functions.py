@@ -15,7 +15,7 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE, SERVICES, \
     SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES
 from pulse8_core_cli.shared.module import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, get_certificates_dir_path, \
-    get_env_variables
+    get_env_variables, ENV_JFROG_USER
 from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
 
 
@@ -25,11 +25,10 @@ def env_precheck():
         env_vars = get_env_variables()
         github_token = env_vars[ENV_GITHUB_TOKEN]
         github_user = env_vars[ENV_GITHUB_USER]
-        jfrog_token = os.environ[ENV_JFROG_TOKEN]
+        jfrog_token = env_vars[ENV_JFROG_TOKEN]
+        jfrog_user = env_vars[ENV_JFROG_USER]
         print(f"[green]jfrog authentication set[/green]")
     except KeyError:
-        print("[bold red]please set GITHUB_TOKEN, GITHUB_USER and JFROG_TOKEN environment variables (more info: tbd)"
-              "[/bold red]")
         exit(1)
     create_certificates()
     print("environment precheck done - continue...")
@@ -88,8 +87,8 @@ def env_create(identifier: str):
     # jfrog container registry
     jfrog_dockerconfigjson = dict()
     jfrog_dockerconfigjson["auths"] = dict()
-    jfrog_dockerconfigjson["auths"]["ghcr.io"] = dict()
-    jfrog_dockerconfigjson["auths"]["ghcr.io"]["auth"] = os.environ[ENV_JFROG_TOKEN]
+    jfrog_dockerconfigjson["auths"]["synpulse.jfrog.io"] = dict()
+    jfrog_dockerconfigjson["auths"]["synpulse.jfrog.io"]["auth"] = env_vars[ENV_JFROG_TOKEN]
     jfrog_dockerconfigjson_json = json.dumps(jfrog_dockerconfigjson)
     jfrog_dockerconfigjson_path = "jfrog_dockerconfig.json"
     with open(jfrog_dockerconfigjson_path, "w") as jfrog_dockerconfigjson_file:

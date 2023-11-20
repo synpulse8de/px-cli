@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from pathlib import Path
@@ -8,6 +9,7 @@ from rich import print
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
 ENV_GITHUB_USER = "GITHUB_USER"
 ENV_JFROG_TOKEN = "JFROG_TOKEN"
+ENV_JFROG_USER = "JFROG_USER"
 REPOSITORY_PRIVATE: str = "private"
 REPOSITORY_INTERNAL: str = "internal"
 
@@ -22,13 +24,19 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         github_com = config_github_cli["github.com"]
         github_user = github_com["user"]
         github_token = github_com["oauth_token"]
-        # github_user = os.environ[ENV_GITHUB_USER]
-        # github_token = os.environ[ENV_GITHUB_TOKEN]
         if not silent:
             print(f"[green]GitHub authentication set to user {github_user}[/green]")
-        return {ENV_GITHUB_USER: github_user, ENV_GITHUB_TOKEN: github_token}
+        docker_config_json_path = Path.home().joinpath(".docker").joinpath("config.json")
+        docker_config_json_raw: str
+        with open(docker_config_json_path) as docker_config_json_file:
+            docker_config_json_raw = docker_config_json_file.read()
+        docker_config_json = json.loads(docker_config_json_raw)
+        jfrog_token = docker_config_json["auths"]["synpulse.jfrog.io"]["auth"]
+        jfrog_user = docker_config_json["auths"]["synpulse.jfrog.io"]["email"]
+        return {ENV_GITHUB_USER: github_user, ENV_GITHUB_TOKEN: github_token,
+                ENV_JFROG_TOKEN: jfrog_token, ENV_JFROG_USER: jfrog_user}
     except KeyError:
-        print("[bold red]Please set GITHUB_TOKEN and GITHUB_USER environment variables[/bold red]")
+        print("[bold red]Error retrieving environment variables - please use 'pulse8 auth login'[/bold red]")
         exit(1)
 
 
