@@ -1,6 +1,8 @@
 import os
+import re
 from pathlib import Path
 
+import yaml
 from rich import print
 
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
@@ -10,11 +12,20 @@ REPOSITORY_PRIVATE: str = "private"
 REPOSITORY_INTERNAL: str = "internal"
 
 
-def get_env_variables() -> dict[str, any]:
+def get_env_variables(silent: bool = False) -> dict[str, any]:
     try:
-        github_user = os.environ[ENV_GITHUB_USER]
-        github_token = os.environ[ENV_GITHUB_TOKEN]
-        print(f"[green]Github authentication set to user {github_user}[/green]")
+        config_github_cli_path = Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
+        config_github_cli_file_raw: str
+        with open(config_github_cli_path) as config_github_cli_file:
+            config_github_cli_file_raw = config_github_cli_file.read()
+        config_github_cli = yaml.load(config_github_cli_file_raw, yaml.Loader)
+        github_com = config_github_cli["github.com"]
+        github_user = github_com["user"]
+        github_token = github_com["oauth_token"]
+        # github_user = os.environ[ENV_GITHUB_USER]
+        # github_token = os.environ[ENV_GITHUB_TOKEN]
+        if not silent:
+            print(f"[green]GitHub authentication set to user {github_user}[/green]")
         return {ENV_GITHUB_USER: github_user, ENV_GITHUB_TOKEN: github_token}
     except KeyError:
         print("[bold red]Please set GITHUB_TOKEN and GITHUB_USER environment variables[/bold red]")
@@ -46,3 +57,10 @@ def get_certificates_dir_path() -> Path:
     certificates_dir: Path = Path(f"{Path.home()}/.pulse8/certificates")
     certificates_dir.mkdir(parents=True, exist_ok=True)
     return certificates_dir
+
+
+def validate_email(email):
+    pattern = r'^[a-zA-Z]+\.[a-zA-Z]+@(synpulse\.com|synpulse8\.com)$'
+    if re.match(pattern, email):
+        return True
+    return False

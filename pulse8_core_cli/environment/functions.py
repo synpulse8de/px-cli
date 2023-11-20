@@ -3,7 +3,6 @@ import json
 import os
 import re
 import subprocess
-from pathlib import Path
 
 import inquirer
 import yaml
@@ -15,16 +14,17 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_SERVICES_CORE, KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE, KEY_CHOICES_SERVICES_CORE_IAM, \
     KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE, SERVICES, \
     SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES
-from pulse8_core_cli.shared.module import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, get_certificates_dir_path
-from pulse8_core_cli.util.platform_discovery import is_cpu_arm
+from pulse8_core_cli.shared.module import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, get_certificates_dir_path, \
+    get_env_variables
+from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
 
 
 def env_precheck():
     print("[bold]running environment precheck...[bold]")
     try:
-        github_token = os.environ[ENV_GITHUB_TOKEN]
-        github_user = os.environ[ENV_GITHUB_USER]
-        print(f"[green]github authentication set to user {github_user}[/green]")
+        env_vars = get_env_variables()
+        github_token = env_vars[ENV_GITHUB_TOKEN]
+        github_user = env_vars[ENV_GITHUB_USER]
         jfrog_token = os.environ[ENV_JFROG_TOKEN]
         print(f"[green]jfrog authentication set[/green]")
     except KeyError:
@@ -36,6 +36,7 @@ def env_precheck():
 
 
 def env_create(identifier: str):
+    env_vars = get_env_variables(silent=True)
     stop_all_env()
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
     args = ("k3d", "cluster", "create",
@@ -66,7 +67,7 @@ def env_create(identifier: str):
     ghcr_dockerconfigjson["auths"] = dict()
     ghcr_dockerconfigjson["auths"]["ghcr.io"] = dict()
     ghcr_credentials_encoded = base64.b64encode(
-        bytes(f"{os.environ[ENV_GITHUB_USER]}:{os.environ[ENV_GITHUB_TOKEN]}", "ascii")
+        bytes(f"{env_vars[ENV_GITHUB_USER]}:{env_vars[ENV_GITHUB_TOKEN]}", "ascii")
     )
     ghcr_dockerconfigjson["auths"]["ghcr.io"]["auth"] = ghcr_credentials_encoded.decode("utf8")
     ghcr_dockerconfigjson_json = json.dumps(ghcr_dockerconfigjson)
@@ -245,8 +246,9 @@ def env_install_ingress_nginx() -> None:
 
 
 def env_install_choices(choices: dict, choices_old: dict | None = None) -> None:
-    github_token = os.environ[ENV_GITHUB_TOKEN]
-    github_user = os.environ[ENV_GITHUB_USER]
+    env_vars = get_env_variables(silent=True)
+    github_token = env_vars[ENV_GITHUB_TOKEN]
+    github_user = env_vars[ENV_GITHUB_USER]
     print("Installing GitHub token using Flux...")
     args = ("flux", "create", "secret", "git", "github-token", "--url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git", f"--username={github_user}", f"--password={github_token}", "--namespace=flux-system")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
