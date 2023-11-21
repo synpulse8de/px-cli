@@ -39,7 +39,6 @@ def auth_login(email: str) -> None:
     docker_auth_raw_bytes = docker_auth_raw.encode('utf8')
     docker_auth_encoded_bytes = base64.b64encode(docker_auth_raw_bytes)
     docker_auth_encoded = docker_auth_encoded_bytes.decode('utf8')
-    # print(docker_auth_encoded)
     docker_config_json_path = Path.home().joinpath(".docker").joinpath("config.json")
     with open(docker_config_json_path) as docker_config_json_file:
         docker_config_json_raw = docker_config_json_file.read()
