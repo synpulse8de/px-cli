@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 from rich import print
 
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
@@ -38,3 +40,9 @@ def git_create_remote(create_remote_repo: str, repository_name: str, github_user
               f"repository. Happy coding![/bold green]")
     else:
         print("[bold green]Committed generated project. Happy coding![/bold green]")
+
+
+def get_certificates_dir_path() -> Path:
+    certificates_dir: Path = Path(f"{Path.home()}/.pulse8/certificates")
+    certificates_dir.mkdir(parents=True, exist_ok=True)
+    return certificates_dir

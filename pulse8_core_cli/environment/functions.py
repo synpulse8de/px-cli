@@ -3,6 +3,7 @@ import json
 import os
 import re
 import subprocess
+from pathlib import Path
 
 import inquirer
 import yaml
@@ -14,7 +15,7 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_SERVICES_CORE, KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE, KEY_CHOICES_SERVICES_CORE_IAM, \
     KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE, SERVICES, \
     SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES
-from pulse8_core_cli.shared.module import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN
+from pulse8_core_cli.shared.module import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, get_certificates_dir_path
 from pulse8_core_cli.util.platform_discovery import is_cpu_arm
 
 
@@ -26,16 +27,21 @@ def env_precheck():
         print(f"[green]github authentication set to user {github_user}[/green]")
         jfrog_token = os.environ[ENV_JFROG_TOKEN]
         print(f"[green]jfrog authentication set[/green]")
-        print("environment precheck done - continue...")
     except KeyError:
         print("[bold red]please set GITHUB_TOKEN, GITHUB_USER and JFROG_TOKEN environment variables (more info: tbd)"
               "[/bold red]")
         exit(1)
+    create_certificates()
+    print("environment precheck done - continue...")
 
 
 def env_create(identifier: str):
+    stop_all_env()
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
-    args = ("k3d", "cluster", "create", identifier)
+    args = ("k3d", "cluster", "create",
+            "-p80:80@loadbalancer", "-p443:443@loadbalancer",
+            "--k3s-arg", "--disable=traefik@server:0",
+            identifier)
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
@@ -196,7 +202,49 @@ def env_update():
     env_install_choices(choices=choices, choices_old=choices_old)
 
 
-def env_install_choices(choices: dict, choices_old: dict | None = None):
+def env_install_ingress_nginx() -> None:
+    print("Installing ingress-nginx using Flux...")
+    print("Installing default tls certificate")
+    key_path = get_certificates_dir_path().joinpath("key.pem")
+    cert_path = get_certificates_dir_path().joinpath("cert.pem")
+    args = ("kubectl",
+            "create", "secret", "tls", "pulse8-localhost",
+            f"--key={str(key_path)}", f"--cert={str(cert_path)}", "--namespace=kube-system")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        print(f"[bold red]Failed to install default tls certificate[/bold red]")
+        print(res[1].decode('utf8'))
+        exit(1)
+    print(res[0].decode('utf8'))
+    print(f"[green]Installed default tls certificate[/green]")
+    print("\n")
+    args = ("flux", "create", "source", "git", "pulse8-core-env-ingress-nginx-repo",
+            "--url=https://github.com/synpulse-group/pulse8-core-env-ingress-nginx.git", "--branch=main",
+            "--secret-ref=github-token")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        print(f"[bold red]Failed to install ingress-nginx git source using Flux[/bold red]")
+        print(res[1].decode('utf8'))
+        exit(1)
+    print(res[0].decode('utf8'))
+    print(f"[green]Installed ingress-nginx git source using Flux[/green]")
+    args = ("flux", "create", "kustomization", "pulse8-core-env-ingress-nginx",
+            "--source=GitRepository/pulse8-core-env-ingress-nginx-repo", "--interval=1m", "--prune=true",
+            "--target-namespace=kube-system")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        print(f"[bold red]Failed to install ingress-nginx using Flux[/bold red]")
+        print(res[1].decode('utf8'))
+        exit(1)
+    print(res[0].decode('utf8'))
+    print(f"[green]Installed ingress-nginx using Flux[/green]")
+    print("\n")
+
+
+def env_install_choices(choices: dict, choices_old: dict | None = None) -> None:
     github_token = os.environ[ENV_GITHUB_TOKEN]
     github_user = os.environ[ENV_GITHUB_USER]
     print("Installing GitHub token using Flux...")
@@ -209,6 +257,9 @@ def env_install_choices(choices: dict, choices_old: dict | None = None):
         exit(1)
     print(res[0].decode('utf8'))
     print(f"[green]Installed GitHub token using Flux[/green]")
+    print("\n")
+    # install ingress-nginx
+    env_install_ingress_nginx()
     # update choices using dependencies
     print(f"Making sure infrastructure dependencies are selected...")
     update_infra_choices_with_deps(choices)
@@ -456,12 +507,7 @@ def env_list():
 
 
 def env_switch(identifier: str):
-    print(f"[bold]stopping all running environments...[/bold]")
-    args = ("k3d", "cluster", "stop", "--all")
-    popen = subprocess.Popen(args, stdout=subprocess.PIPE)
-    popen.wait()
-    output = popen.stdout.read()
-    print(output.decode('utf8'))
+    stop_all_env()
     print(f"[bold]starting target environment (id: {identifier})...[/bold]")
     args = ("k3d", "cluster", "start", f"{identifier}")
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
@@ -597,3 +643,39 @@ def uninstall_service(service_key: str) -> None:
         exit(1)
     print(res[0].decode('utf8'))
     print(f"[green]Uninstalled {SERVICES[service_key][0]} ({service_key}) using Flux[/green]")
+
+
+def stop_all_env() -> None:
+    print(f"[bold]stopping all running environments...[/bold]")
+    args = ("k3d", "cluster", "stop", "--all")
+    popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+    popen.wait()
+    output = popen.stdout.read()
+    print(output.decode('utf8'))
+
+
+def create_certificates() -> None:
+    print("creating certificates...")
+    cert_path = get_certificates_dir_path().joinpath("cert.pem")
+    key_path = get_certificates_dir_path().joinpath("key.pem")
+    if cert_path.exists() and key_path.exists():
+        print("[green]certificates already exist[/green]")
+    else:
+        args = ("mkcert", "--install")
+        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res: tuple[bytes, bytes] = pipe.communicate()
+        if pipe.returncode == 1:
+            print(res[1].decode('utf8'))
+            exit(1)
+        print(res[0].decode('utf8'))
+        args = ("mkcert",
+                "-key-file", "key.pem", "-cert-file", "cert.pem",
+                "pulse8.localhost", "*.pulse8.localhost", "localhost", "127.0.0.1", "::1")
+        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res: tuple[bytes, bytes] = pipe.communicate()
+        if pipe.returncode == 1:
+            print(res[1].decode('utf8'))
+            exit(1)
+        print(res[0].decode('utf8'))
+        print("[green]certificates created[/green]")
+
