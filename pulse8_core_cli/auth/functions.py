@@ -33,7 +33,7 @@ def auth_login(email: str) -> None:
     access_token_result_raw = stdout.decode('utf8')
     access_token_dict = json.loads(access_token_result_raw)
     access_token: str = access_token_dict['access_token']
-    print(access_token)
+    print("created access token")
     print("[italic]Hint: Token expires in one year[/italic]")
     docker_auth_raw = f"{email}:{access_token}"
     docker_auth_raw_bytes = docker_auth_raw.encode('utf8')
