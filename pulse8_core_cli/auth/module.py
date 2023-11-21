@@ -1,15 +1,16 @@
 import typer
 
+from pulse8_core_cli.auth.functions import auth_login
 
 app = typer.Typer()
 
 
 @app.command()
-def login():
+def login(email: str):
     """
     Authenticate against Synpulse8 infrastructure
     """
-    print(f"[WIP]...")
+    auth_login(email)
 
 
 @app.command()
