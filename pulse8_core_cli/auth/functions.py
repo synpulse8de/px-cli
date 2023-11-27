@@ -16,6 +16,7 @@ def auth_login(email: str) -> None:
         exit(1)
     print("[bold]authenticate against github.com...[bold]")
     os.system("gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web")
+    adjust_git_config(email)
     print("[bold]authenticate against synpulse.jfrog.io...[bold]")
     print("[italic]"
           "Help: "
@@ -61,3 +62,17 @@ def auth_login(email: str) -> None:
     with open(docker_config_json_path, "w") as docker_config_json_file:
         docker_config_json_file.write(json.dumps(docker_config_json, indent=4))
 
+
+def adjust_git_config(email: str):
+    os.system("git config --global core.longpaths true")
+    try:
+        name = email.split("@")[0]
+        name_parts = name.split(".")
+        first_name = name_parts[0]
+        last_name = name_parts[1]
+        username = (first_name + " " + last_name).title()
+        os.system('git config --global user.name "' + username + '"')
+        os.system('git config --global user.email "' + email + '"')
+        print("email updated in git and username for git changed to " + username)
+    except Exception:
+        print(f"[bold red]creation of git username from email failed, skipping...[/bold red]")
