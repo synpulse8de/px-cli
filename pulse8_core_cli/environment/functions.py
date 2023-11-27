@@ -203,10 +203,20 @@ def env_update():
 
 
 def env_install_ingress_nginx() -> None:
+    do_default_tls_install: bool
+    args = ("kubectl", "get", "secret", "pulse8-localhost", "--namespace=kube-system")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        do_default_tls_install = True
+    else:
+        do_default_tls_install = False
+    if not do_default_tls_install:
+        return
     print("Installing ingress-nginx using Flux...")
-    print("Installing default tls certificate")
     key_path = get_certificates_dir_path().joinpath("key.pem")
     cert_path = get_certificates_dir_path().joinpath("cert.pem")
+    print("Installing default tls certificate")
     args = ("kubectl",
             "create", "secret", "tls", "pulse8-localhost",
             f"--key={str(key_path)}", f"--cert={str(cert_path)}", "--namespace=kube-system")
