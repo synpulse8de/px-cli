@@ -72,6 +72,6 @@ def adjust_git_config(email: str):
         last_name = name_parts[1]
         username = (first_name + " " + last_name).title()
         os.system('git config --global user.name "' + username + '"')
-        print("Username for github changed to " + username)
+        print("username for git changed to " + username)
     except Exception:
         print(f"[bold red]creation of git username from email failed, skipping...[/bold red]")
