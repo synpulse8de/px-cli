@@ -6,6 +6,8 @@ from pathlib import Path
 import yaml
 from rich import print
 
+from pulse8_core_cli.shared.platform_discovery import is_windows
+
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
 ENV_GITHUB_USER = "GITHUB_USER"
 ENV_JFROG_TOKEN = "JFROG_TOKEN"
@@ -16,7 +18,12 @@ REPOSITORY_INTERNAL: str = "internal"
 
 def get_env_variables(silent: bool = False) -> dict[str, any]:
     try:
-        config_github_cli_path = Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
+
+        config_github_cli_path: Path
+        if is_windows():
+            config_github_cli_path = Path(os.getenv('APPDATA')).joinpath("GitHub CLI").joinpath("hosts.yml")
+        else:
+            config_github_cli_path = Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
         config_github_cli_file_raw: str
         with open(config_github_cli_path) as config_github_cli_file:
             config_github_cli_file_raw = config_github_cli_file.read()

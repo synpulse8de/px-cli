@@ -667,8 +667,8 @@ def stop_all_env() -> None:
 
 def create_certificates() -> None:
     print("creating certificates...")
-    cert_path = get_certificates_dir_path().joinpath("cert.pem")
     key_path = get_certificates_dir_path().joinpath("key.pem")
+    cert_path = get_certificates_dir_path().joinpath("cert.pem")
     if cert_path.exists() and key_path.exists():
         print("[green]certificates already exist[/green]")
     else:
@@ -680,7 +680,7 @@ def create_certificates() -> None:
             exit(1)
         print(res[0].decode('utf8'))
         args = ("mkcert",
-                "-key-file", "key.pem", "-cert-file", "cert.pem",
+                "-key-file", key_path, "-cert-file", cert_path,
                 "pulse8.localhost", "*.pulse8.localhost", "localhost", "127.0.0.1", "::1")
         pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         res: tuple[bytes, bytes] = pipe.communicate()
