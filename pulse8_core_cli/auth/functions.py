@@ -6,6 +6,7 @@ import subprocess
 import time
 from pathlib import Path
 
+import typer
 from rich import print
 
 from pulse8_core_cli.shared.module import validate_email, get_env_variables, ENV_JFROG_TOKEN
@@ -16,6 +17,17 @@ def auth_login(email: str) -> None:
         print(f"[bold red]your provided email {email} should fulfill the "
               f"pattern firstname.lastname@synpulse.com or @synpulse8.com...[/bold red]")
         exit(1)
+
+    has_synpulse_access = typer.confirm(
+        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?")
+    if not has_synpulse_access:
+        print("[bold red]Please request access to GitHub and JFrog to continue.[/bold red]")
+        print("You can request access to GitHub here: "
+              "[link=https://support.synpulse.com/support/catalog/items/79]GitHub[/link]")
+        print("You can request access to JFrog here: "
+              "[link=https://support.synpulse.com/support/catalog/items/102]JFrog[/link]")
+        exit(1)
+
     print("[bold]authenticate against github.com...[bold]")
     os.system("gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web")
     adjust_git_config(email)
