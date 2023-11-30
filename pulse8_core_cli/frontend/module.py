@@ -1,9 +1,9 @@
+from typing import Annotated
+
 import typer
-import os
 
 from rich import print
-from copier import run_copy, run_update
-from pulse8_core_cli.environment.functions import ENV_GITHUB_USER, ENV_GITHUB_TOKEN
+from pulse8_core_cli.frontend.functions import frontend_create, frontend_update
 
 app = typer.Typer()
 
@@ -17,35 +17,25 @@ def dev():
 
 
 @app.command()
-def create():
+def create(answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
+           create_remote_repository: Annotated[str,
+           typer.Option(help="Create remote repository [options: no/private/internal]")] = None,
+           defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
+           skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = False):
     """
     Create a new frontend
     """
-    try:
-        github_token = os.environ[ENV_GITHUB_TOKEN]
-        github_user = os.environ[ENV_GITHUB_USER]
-        print(f"[green]Github authentication set to user {github_user}[/green]")
-    except KeyError:
-        print("[bold red]Please set GITHUB_TOKEN and GITHUB_USER environment variables[/bold red]")
-        exit(1)
-
-    print('Pulling latest template data...')
-    run_copy(f"https://{github_user}:{github_token}@github.com/synpulse-group/pulse8-core-frontend-nextjs-template.git", ".")
-
-    os.system("git init")
-    os.system("git add .")
-    os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
-
-    print("[bold green]Committed generated content. Happy coding![/bold green]")
+    frontend_create(create_remote_repository, answers_file, defaults, skip_answered)
 
 
 @app.command()
-def update():
+def update(answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
+           defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
+           skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = True):
     """
     Update an existing frontend
     """
-    print('Pulling latest template data...')
-    run_update('.', overwrite=True)
+    frontend_update(answers_file, defaults, skip_answered)
 
 
 @app.command()

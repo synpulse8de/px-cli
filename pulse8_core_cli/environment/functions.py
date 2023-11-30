@@ -14,8 +14,8 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_SERVICES_CORE, KEY_CHOICES_SERVICES_CORE_NOTIFICATION_ENGINE, KEY_CHOICES_SERVICES_CORE_IAM, \
     KEY_CHOICES_SERVICES_CORE_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_CORE_QUERY_ENGINE, SERVICES, \
     SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES
-from pulse8_core_cli.shared.module import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, get_certificates_dir_path, \
-    get_env_variables, ENV_JFROG_USER
+from pulse8_core_cli.shared.constants import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER
+from pulse8_core_cli.shared.module import get_certificates_dir_path, get_env_variables
 from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
 
 
