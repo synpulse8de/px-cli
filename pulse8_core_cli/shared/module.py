@@ -1,19 +1,15 @@
 import json
 import os
 import re
+
 from pathlib import Path
+from uuid import uuid4
 
 import yaml
 from rich import print
 
+from pulse8_core_cli.shared.constants import ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER, ENV_GITHUB_TOKEN
 from pulse8_core_cli.shared.platform_discovery import is_windows
-
-ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
-ENV_GITHUB_USER = "GITHUB_USER"
-ENV_JFROG_TOKEN = "JFROG_TOKEN"
-ENV_JFROG_USER = "JFROG_USER"
-REPOSITORY_PRIVATE: str = "private"
-REPOSITORY_INTERNAL: str = "internal"
 
 
 def get_env_variables(silent: bool = False) -> dict[str, any]:
@@ -85,3 +81,18 @@ def validate_email(email):
     if re.match(pattern, email):
         return True
     return False
+
+
+def create_template_tmp_dir():
+    new_dir: Path = Path(f"{Path.cwd()}/p8t_tmp_dir_{str(uuid4())}")
+    new_dir.mkdir(parents=True, exist_ok=True)
+    os.chdir(new_dir)
+    return new_dir
+
+
+def rename_template_tmp_dir(tmp_dir, new_name):
+    os.chdir(os.path.dirname(os.getcwd()))
+    tmp_dir = tmp_dir.rename(new_name)
+    os.chdir(tmp_dir)
+    return tmp_dir
+

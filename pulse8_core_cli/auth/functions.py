@@ -1,12 +1,15 @@
 import base64
 import json
 import os
+import shutil
 import subprocess
+import time
 from pathlib import Path
 
+import typer
 from rich import print
 
-from pulse8_core_cli.shared.module import validate_email
+from pulse8_core_cli.shared.module import validate_email, get_env_variables, ENV_JFROG_TOKEN
 
 
 def auth_login(email: str) -> None:
@@ -14,6 +17,17 @@ def auth_login(email: str) -> None:
         print(f"[bold red]your provided email {email} should fulfill the "
               f"pattern firstname.lastname@synpulse.com or @synpulse8.com...[/bold red]")
         exit(1)
+
+    has_synpulse_access = typer.confirm(
+        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?")
+    if not has_synpulse_access:
+        print("[bold red]Please request access to GitHub and JFrog to continue.[/bold red]")
+        print("You can request access to GitHub here: "
+              "[link=https://support.synpulse.com/support/catalog/items/79]GitHub[/link]")
+        print("You can request access to JFrog here: "
+              "[link=https://support.synpulse.com/support/catalog/items/102]JFrog[/link]")
+        exit(1)
+
     print("[bold]authenticate against github.com...[bold]")
     os.system("gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web")
     adjust_git_config(email)
@@ -61,6 +75,131 @@ def auth_login(email: str) -> None:
     docker_config_json_auths_spjfrog["email"] = email
     with open(docker_config_json_path, "w") as docker_config_json_file:
         docker_config_json_file.write(json.dumps(docker_config_json, indent=4))
+    env_vars = get_env_variables(silent=True)
+    if not check_npmrc_ready():
+        setup_npmrc(access_token, email)
+    if not check_maven_ready():
+        setup_maven(access_token, email)
+
+
+def check_npmrc_ready() -> bool:
+    npmrc_file_path = Path.home().joinpath(".npmrc")
+    if not npmrc_file_path.exists():
+        print("~/.npmrc does not exist")
+        return False
+    npmrc_raw: str
+    with open(npmrc_file_path) as npmrc_file:
+        npmrc_raw = npmrc_file.read()
+    if "@s8:registry" in npmrc_raw:
+        print("~/.npmrc @s8 is set up")
+        print("[italic]Hint: if you have problems cleanup the @s8 settings from ~/.npmrc[/italic]")
+        return True
+    print("~/.npmrc @s8 is not set up")
+    return False
+
+
+def check_maven_ready() -> bool:
+    maven_settings_file_path = Path.home().joinpath(".m2").joinpath("settings.xml")
+    if not maven_settings_file_path.exists():
+        print("~/.m2/settings.xml does not exist")
+        return False
+    maven_settings_raw: str
+    with open(maven_settings_file_path) as maven_settings_file:
+        maven_settings_raw = maven_settings_file.read()
+    if "<url>https://synpulse.jfrog.io/artifactory/s8-libs-release</url>" in maven_settings_raw and \
+            "<url>https://synpulse.jfrog.io/artifactory/s8-libs-snapshot</url>" in maven_settings_raw:
+        print("~/.m2/settings.xml s8-libs-release and s8-libs-snapshot is set up")
+        print("[italic]Hint: if you have problems cleanup the settings from ~/.m2/settings.xml[/italic]")
+        return True
+    print("~/.m2/settings.xml s8-libs-release and s8-libs-snapshot is not set up")
+    return False
+
+
+def setup_maven(token: str, email: str) -> None:
+    print("[bold]setting up maven [italic](~/.m2/settings.xml)[/italic]...[/bold]")
+    curr_time = time.time()
+    maven_settings_file_path = Path.home().joinpath(".m2").joinpath("settings.xml")
+    if maven_settings_file_path.exists():
+        maven_settings_file_backup_path = Path.home().joinpath(".m2").joinpath(f"settings.xml.backup-{curr_time}")
+        print(f"performing backup of maven settings to [italic](~/.m2/settings.xml.backup-{curr_time})[/italic]...")
+        shutil.copyfile(maven_settings_file_path, maven_settings_file_backup_path)
+    jfrog_snippet = f"""<?xml version="1.0" encoding="UTF-8"?>
+<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 http://maven.apache.org/xsd/settings-1.2.0.xsd" xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <servers>
+    <server>
+      <username>{email}</username>
+      <password>{token}</password>
+      <id>central</id>
+    </server>
+    <server>
+      <username>{email}</username>
+      <password>{token}</password>
+      <id>snapshots</id>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+      <repositories>
+        <repository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>s8-libs-release</name>
+          <url>https://synpulse.jfrog.io/artifactory/s8-libs-release</url>
+        </repository>
+        <repository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>s8-libs-snapshot</name>
+          <url>https://synpulse.jfrog.io/artifactory/s8-libs-snapshot</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>s8-libs-release</name>
+          <url>https://synpulse.jfrog.io/artifactory/s8-libs-release</url>
+        </pluginRepository>
+        <pluginRepository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>s8-libs-snapshot</name>
+          <url>https://synpulse.jfrog.io/artifactory/s8-libs-snapshot</url>
+        </pluginRepository>
+      </pluginRepositories>
+      <id>artifactory</id>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>artifactory</activeProfile>
+  </activeProfiles>
+</settings>"""
+    with open(maven_settings_file_path, "w") as maven_settings_file:
+        maven_settings_file.write(jfrog_snippet)
+    print("[green]maven setup finished[/green]")
+
+
+def setup_npmrc(token: str, email: str) -> None:
+    print("[bold]setting up npm [italic](~/.npmrc)[/italic]...[/bold]")
+    curr_time = time.time()
+    npmrc_file_path = Path.home().joinpath(".npmrc")
+    if npmrc_file_path.exists():
+        npmrc_file_backup_path = Path.home().joinpath(f".npmrc.backup-{curr_time}")
+        print(f"performing backup of npm settings to [italic](~/.npmrc.backup-{curr_time})[/italic]...")
+        shutil.copyfile(npmrc_file_path, npmrc_file_backup_path)
+    jfrog_snippet = f"""@s8:registry=https://synpulse.jfrog.io/artifactory/api/npm/s8-npm/
+//synpulse.jfrog.io/artifactory/api/npm/s8-npm/:_auth={token}
+//synpulse.jfrog.io/artifactory/api/npm/s8-npm/:username={email}
+//synpulse.jfrog.io/artifactory/api/npm/s8-npm/:email={email}
+//synpulse.jfrog.io/artifactory/api/npm/s8-npm/:always-auth=true"""
+    with open(npmrc_file_path, "a") as npmrc_file:
+        npmrc_file.write(jfrog_snippet)
+    print("[green]npm setup finished[/green]")
 
 
 def adjust_git_config(email: str):
