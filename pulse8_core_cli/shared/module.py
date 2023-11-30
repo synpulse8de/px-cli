@@ -74,6 +74,12 @@ def get_certificates_dir_path() -> Path:
     return certificates_dir
 
 
+def get_environments_dir_path() -> Path:
+    environments_dir: Path = Path(f"{Path.home()}/.pulse8/.environments")
+    environments_dir.mkdir(parents=True, exist_ok=True)
+    return environments_dir
+
+
 def validate_email(email):
     pattern = r'^[a-zA-Z]+\.[a-zA-Z]+@(synpulse\.com|synpulse8\.com)$'
     if re.match(pattern, email):
