@@ -35,7 +35,7 @@ SERVICES = {
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: {
         "name": "Pulse8 Core Workflow Engine",
         "repository": "https://github.com/synpulse-group/pulse8-core-workflow-engine.git",
-        "branch": "main",
+        "branch": "develop",
         "ref-name": None,
         "suspend": False
     }
@@ -52,7 +52,10 @@ SERVICES_DEPENDENCIES_INFRA = {
     KEY_CHOICES_SERVICES_QUERY_ENGINE: [
         KEY_CHOICES_INFRA_POSTGRESQL
     ],
-    KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: []
+    KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: [
+        KEY_CHOICES_INFRA_POSTGRESQL,
+        KEY_CHOICES_INFRA_KAFKA
+    ]
 }
 
 SERVICES_DEPENDENCIES_SERVICES = {
