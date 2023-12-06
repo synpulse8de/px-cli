@@ -15,7 +15,7 @@ SERVICES = {
     KEY_CHOICES_SERVICES_IAM: {
         "name": "Pulse8 Core Identity & Access Management",
         "repository": "https://github.com/synpulse-group/pulse8-core-iam.git",
-        "branch": "main",
+        "branch": "develop",
         "ref-name": None,
         "suspend": False
     },
