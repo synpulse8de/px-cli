@@ -13,7 +13,7 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_INFRA_REDIS, KEY_CHOICES_INFRA_KAFKA, KEY_CHOICES_INFRA_EXASOL, KEY_CHOICES_INFRA_TEEDY, \
     KEY_CHOICES_SERVICES, KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE, KEY_CHOICES_SERVICES_IAM, \
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_QUERY_ENGINE, SERVICES, \
-    SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES
+    SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES, KEY_CHOICES_INFRA_KEYCLOAK, INFRA_DEPENDENCIES_INFRA
 from pulse8_core_cli.shared.constants import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER
 from pulse8_core_cli.shared.module import get_certificates_dir_path, get_env_variables, get_environments_dir_path
 from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
@@ -146,6 +146,8 @@ def env_update():
                 preselection_infra.append(KEY_CHOICES_INFRA_EXASOL)
             if KEY_CHOICES_INFRA_TEEDY in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_TEEDY)
+            if KEY_CHOICES_INFRA_KEYCLOAK in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_KEYCLOAK)
         if KEY_CHOICES_SERVICES in choices_configmap:
             choices_services = choices_configmap[KEY_CHOICES_SERVICES]
             if (KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE in choices_services and
@@ -192,6 +194,19 @@ def env_install_ingress_nginx() -> None:
         exit(1)
     print(res[0].decode('utf8'))
     print(f"[green]Installed default tls certificate[/green]")
+    print("\n")
+    print("Installing default tls certificate into default namespace")
+    args = ("kubectl",
+            "create", "secret", "tls", "pulse8-localhost",
+            f"--key={str(key_path)}", f"--cert={str(cert_path)}", "--namespace=default")
+    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        print(f"[bold red]Failed to install default tls certificate into default namespace[/bold red]")
+        print(res[1].decode('utf8'))
+        exit(1)
+    print(res[0].decode('utf8'))
+    print(f"[green]Installed default tls certificate into default namespace[/green]")
     print("\n")
     args = ("flux", "create", "source", "git", "pulse8-core-env-ingress-nginx-repo",
             "--url=https://github.com/synpulse-group/pulse8-core-env-ingress-nginx.git", "--branch=main",
@@ -357,6 +372,30 @@ def env_install_choices(choices: dict, choices_old: dict | None = None, services
                 exit(1)
             print(f"[green]Installed Teedy using Flux[/green]")
             print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_KEYCLOAK in infra:
+            print("Installing Keycloak using Flux...")
+            args = ("flux", "create", "source", "git", "pulse8-core-env-keycloak-repo",
+                    "--url=https://github.com/synpulse-group/pulse8-core-env-keycloak.git", "--branch=main",
+                    "--secret-ref=github-token")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Keycloak git source using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Keycloak git source using Flux[/green]")
+            print(res[0].decode('utf8'))
+            args = ("flux", "create", "kustomization", "pulse8-core-env-keycloak",
+                    "--source=GitRepository/pulse8-core-env-keycloak-repo", "--interval=1m", "--prune=true",
+                    "--target-namespace=default")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Keycloak using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Keycloak using Flux[/green]")
+            print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -460,6 +499,25 @@ def env_install_choices(choices: dict, choices_old: dict | None = None, services
                     exit(1)
                 print(f"[green]Uninstalled Teedy using Flux[/green]")
                 print(res[0].decode('utf8'))
+            if KEY_CHOICES_INFRA_KEYCLOAK not in choices_infra and KEY_CHOICES_INFRA_KEYCLOAK in choices_infra_old:
+                print("Uninstalling Keycloak using Flux...")
+                args = ("flux", "delete", "source", "git", "pulse8-core-env-keycloak-repo", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Keycloak git source using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(res[0].decode('utf8'))
+                args = ("flux", "delete", "kustomization", "pulse8-core-env-keycloak", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Keycloak using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(f"[green]Uninstalled Keycloak using Flux[/green]")
+                print(res[0].decode('utf8'))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
@@ -517,6 +575,7 @@ def get_questions(preselection_infra: list[str] = None,
             # not supported on arm64 - maybe bring proxy solution in place
             # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
+            ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
         ]
     else:
         choices_infra = [
@@ -525,6 +584,7 @@ def get_questions(preselection_infra: list[str] = None,
             ("Redis", KEY_CHOICES_INFRA_REDIS),
             ("Exasol", KEY_CHOICES_INFRA_EXASOL),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
+            ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
         ]
     questions = [
         inquirer.Checkbox(
@@ -550,9 +610,14 @@ def get_questions(preselection_infra: list[str] = None,
 
 def update_infra_choices_with_deps(choices: dict) -> None:
     needed_infrastructure = choices[KEY_CHOICES_INFRA]
-    for service_core in choices[KEY_CHOICES_SERVICES]:
-        needed_infrastructure_for_service = SERVICES_DEPENDENCIES_INFRA[service_core]
-        needed_infrastructure = needed_infrastructure + needed_infrastructure_for_service
+    for infra in choices[KEY_CHOICES_INFRA]:
+        if infra in INFRA_DEPENDENCIES_INFRA:
+            needed_infrastructure_for_infra = INFRA_DEPENDENCIES_INFRA[infra]
+            needed_infrastructure = needed_infrastructure + needed_infrastructure_for_infra
+    for service in choices[KEY_CHOICES_SERVICES]:
+        if service in SERVICES_DEPENDENCIES_INFRA:
+            needed_infrastructure_for_service = SERVICES_DEPENDENCIES_INFRA[service]
+            needed_infrastructure = needed_infrastructure + needed_infrastructure_for_service
     needed_infrastructure = list(set(needed_infrastructure))
     choices[KEY_CHOICES_INFRA] = needed_infrastructure
 
