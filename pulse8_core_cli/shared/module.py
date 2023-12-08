@@ -16,10 +16,15 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
     try:
 
         config_github_cli_path: Path
-        if is_windows():
-            config_github_cli_path = Path(os.getenv('APPDATA')).joinpath("GitHub CLI").joinpath("hosts.yml")
-        else:
-            config_github_cli_path = Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
+        try:
+            if is_windows():
+                config_github_cli_path = Path(os.getenv('APPDATA')).joinpath("GitHub CLI").joinpath("hosts.yml")
+            else:
+                config_github_cli_path = Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
+        except Exception as e:
+            print(f"[red]Error reading from GitHub CLI hosts.yml[/red]")
+            print(f"[italic]Hint: Please try to reauthorize using [bold]pulse8 auth login[/bold][/italic]")
+            raise e
         config_github_cli_file_raw: str
         with open(config_github_cli_path) as config_github_cli_file:
             config_github_cli_file_raw = config_github_cli_file.read()
@@ -29,7 +34,7 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         github_token = github_com["oauth_token"]
         if not silent:
             print(f"[green]GitHub authentication set to user {github_user}[/green]")
-        docker_config_json_path = Path.home().joinpath(".docker").joinpath("config.json")
+        docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
         docker_config_json_raw: str
         with open(docker_config_json_path) as docker_config_json_file:
             docker_config_json_raw = docker_config_json_file.read()
@@ -74,6 +79,18 @@ def get_environments_dir_path() -> Path:
     environments_dir: Path = Path(f"{Path.home()}/.pulse8/.environments")
     environments_dir.mkdir(parents=True, exist_ok=True)
     return environments_dir
+
+
+def get_dotdocker_dir_path() -> Path:
+    docker_dir: Path = Path.home().joinpath(".docker")
+    docker_dir.mkdir(parents=True, exist_ok=True)
+    return docker_dir
+
+
+def get_dotm2_dir_path() -> Path:
+    m2_dir: Path = Path.home().joinpath(".m2")
+    m2_dir.mkdir(parents=True, exist_ok=True)
+    return m2_dir
 
 
 def validate_email(email):

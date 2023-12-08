@@ -9,7 +9,8 @@ from pathlib import Path
 import typer
 from rich import print
 
-from pulse8_core_cli.shared.module import validate_email, get_env_variables, ENV_JFROG_TOKEN
+from pulse8_core_cli.shared.module import validate_email, get_env_variables, ENV_JFROG_TOKEN, get_dotm2_dir_path, \
+    get_dotdocker_dir_path
 
 
 def auth_login(email: str) -> None:
@@ -54,7 +55,7 @@ def auth_login(email: str) -> None:
     docker_auth_raw_bytes = docker_auth_raw.encode('utf8')
     docker_auth_encoded_bytes = base64.b64encode(docker_auth_raw_bytes)
     docker_auth_encoded = docker_auth_encoded_bytes.decode('utf8')
-    docker_config_json_path = Path.home().joinpath(".docker").joinpath("config.json")
+    docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
     with open(docker_config_json_path) as docker_config_json_file:
         docker_config_json_raw = docker_config_json_file.read()
     docker_config_json = json.loads(docker_config_json_raw)
@@ -99,7 +100,7 @@ def check_npmrc_ready() -> bool:
 
 
 def check_maven_ready() -> bool:
-    maven_settings_file_path = Path.home().joinpath(".m2").joinpath("settings.xml")
+    maven_settings_file_path = get_dotm2_dir_path().joinpath("settings.xml")
     if not maven_settings_file_path.exists():
         print("~/.m2/settings.xml does not exist")
         return False
@@ -118,9 +119,9 @@ def check_maven_ready() -> bool:
 def setup_maven(token: str, email: str) -> None:
     print("[bold]setting up maven [italic](~/.m2/settings.xml)[/italic]...[/bold]")
     curr_time = time.time()
-    maven_settings_file_path = Path.home().joinpath(".m2").joinpath("settings.xml")
+    maven_settings_file_path = get_dotm2_dir_path().joinpath("settings.xml")
     if maven_settings_file_path.exists():
-        maven_settings_file_backup_path = Path.home().joinpath(".m2").joinpath(f"settings.xml.backup-{curr_time}")
+        maven_settings_file_backup_path = get_dotm2_dir_path().joinpath(f"settings.xml.backup-{curr_time}")
         print(f"performing backup of maven settings to [italic](~/.m2/settings.xml.backup-{curr_time})[/italic]...")
         shutil.copyfile(maven_settings_file_path, maven_settings_file_backup_path)
     jfrog_snippet = f"""<?xml version="1.0" encoding="UTF-8"?>
