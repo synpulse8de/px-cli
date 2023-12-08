@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import typer
 from rich import print
 
@@ -6,12 +8,14 @@ app = typer.Typer()
 
 
 @app.command()
-def create(identifier: str):
+def create(identifier: Annotated[str, typer.Argument(help="The identifier of the environment.")],
+           from_env: Annotated[str, typer.Option(help="Create from existing environment config.")] = None,
+           from_file: Annotated[str, typer.Option(help="Create from existing environment config file.")] = None):
     """
     Creates a new environment
     """
     env_precheck()
-    env_create(identifier=identifier)
+    env_create(identifier=identifier, from_env=from_env, from_file=from_file)
 
 
 @app.command()
