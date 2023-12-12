@@ -3,6 +3,7 @@ import json
 import os
 import re
 import subprocess
+from pathlib import Path
 
 import inquirer
 import yaml
@@ -27,14 +28,14 @@ def env_precheck():
         github_user = env_vars[ENV_GITHUB_USER]
         jfrog_token = env_vars[ENV_JFROG_TOKEN]
         jfrog_user = env_vars[ENV_JFROG_USER]
-        print(f"[green]jfrog authentication set[/green]")
+        print(f"[green]JFrog authentication set[/green]")
     except KeyError:
         exit(1)
     create_certificates()
     print("environment precheck done - continue...")
 
 
-def env_create(identifier: str):
+def env_create(identifier: str, from_env: str|None = None, from_file: str|None = None):
     env_vars = get_env_variables(silent=True)
     stop_all_env()
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
@@ -110,10 +111,18 @@ def env_create(identifier: str):
     print(f"[green]installed pull secrets (ghcr.io, synpulse.jfrog.io) into environment (id: {identifier})[/green]\n")
     os.remove(ghcr_dockerconfigjson_path)
     os.remove(jfrog_dockerconfigjson_path)
-    choices = inquirer.prompt(get_questions())
+    if from_env is not None:
+        choices, services = get_choices_from_env(from_env)
+        env_check_and_update_deps(choices)
+    elif from_file is not None:
+        choices, services = get_choices_from_file(from_file)
+        env_check_and_update_deps(choices)
+    else:
+        choices = inquirer.prompt(get_questions())
+        services = SERVICES
     env_check_and_update_deps(choices)
-    env_install_choices(choices)
-    store_env_setup(identifier, choices)
+    env_install_choices(choices=choices, services=services)
+    store_env_setup(identifier=identifier, choices=choices, services=services)
 
 
 def env_update():
@@ -131,38 +140,8 @@ def env_update():
     (choices_fs, choices_configmap) = read_env_setup(identifier)
     print(f"[green]collected information about current context[/green]")
     print(f"[bold]updating environment (id: {identifier})...[/bold]\n")
-    preselection_infra = []
-    preselection_services_core = []
-    if choices_configmap is not None:
-        if KEY_CHOICES_INFRA in choices_configmap:
-            choices_infra = choices_configmap[KEY_CHOICES_INFRA]
-            if KEY_CHOICES_INFRA_POSTGRESQL in choices_infra:
-                preselection_infra.append(KEY_CHOICES_INFRA_POSTGRESQL)
-            if KEY_CHOICES_INFRA_REDIS in choices_infra:
-                preselection_infra.append(KEY_CHOICES_INFRA_REDIS)
-            if KEY_CHOICES_INFRA_KAFKA in choices_infra:
-                preselection_infra.append(KEY_CHOICES_INFRA_KAFKA)
-            if KEY_CHOICES_INFRA_EXASOL in choices_infra:
-                preselection_infra.append(KEY_CHOICES_INFRA_EXASOL)
-            if KEY_CHOICES_INFRA_TEEDY in choices_infra:
-                preselection_infra.append(KEY_CHOICES_INFRA_TEEDY)
-            if KEY_CHOICES_INFRA_KEYCLOAK in choices_infra:
-                preselection_infra.append(KEY_CHOICES_INFRA_KEYCLOAK)
-        if KEY_CHOICES_SERVICES in choices_configmap:
-            choices_services = choices_configmap[KEY_CHOICES_SERVICES]
-            if (KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE in choices_services and
-                    not choices_services[KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE]["suspend"]):
-                preselection_services_core.append(KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE)
-            if (KEY_CHOICES_SERVICES_IAM in choices_services and
-                    not choices_services[KEY_CHOICES_SERVICES_IAM]["suspend"]):
-                preselection_services_core.append(KEY_CHOICES_SERVICES_IAM)
-            if (KEY_CHOICES_SERVICES_WORKFLOW_ENGINE in choices_services and
-                    not choices_services[KEY_CHOICES_SERVICES_WORKFLOW_ENGINE]["suspend"]):
-                preselection_services_core.append(KEY_CHOICES_SERVICES_WORKFLOW_ENGINE)
-            if (KEY_CHOICES_SERVICES_QUERY_ENGINE in choices_services and
-                    not choices_services[KEY_CHOICES_SERVICES_QUERY_ENGINE]["suspend"]):
-                preselection_services_core.append(KEY_CHOICES_SERVICES_QUERY_ENGINE)
-    choices = inquirer.prompt(get_questions(preselection_infra, preselection_services_core))
+    (preselection_infra, preselection_services) = get_preselection_from_setup(choices_configmap)
+    choices = inquirer.prompt(get_questions(preselection_infra, preselection_services))
     env_check_and_update_deps(choices)
     env_install_choices(choices=choices, choices_old=choices_fs, services=choices_configmap["services"])
     store_env_setup(identifier, choices)
@@ -608,6 +587,65 @@ def get_questions(preselection_infra: list[str] = None,
     return questions
 
 
+def get_choices_from_env(identifier: str) -> (dict, dict):
+    (choices_fs, choices_configmap) = read_env_setup(identifier, file_only=True)
+    (preselection_infra, preselection_services) = get_preselection_from_setup(choices_fs)
+    choices = dict()
+    choices[KEY_CHOICES_INFRA] = preselection_infra
+    choices[KEY_CHOICES_SERVICES] = preselection_services
+    print(choices)
+    return choices, choices_fs["services"]
+
+
+def get_choices_from_file(path: str) -> (dict, dict):
+    path_obj = Path(path)
+    if path_obj.exists():
+        choices_fs = read_env_setup_from_path(path_obj)
+        (preselection_infra, preselection_services) = get_preselection_from_setup(choices_fs)
+        choices = dict()
+        choices[KEY_CHOICES_INFRA] = preselection_infra
+        choices[KEY_CHOICES_SERVICES] = preselection_services
+        return choices, choices_fs["services"]
+    else:
+        print(f"[red]{path} does not exist![/red]")
+        exit(1)
+
+
+def get_preselection_from_setup(setup: dict) -> (list, list):
+    preselection_infra = []
+    preselection_services = []
+    if setup is not None:
+        if KEY_CHOICES_INFRA in setup:
+            choices_infra = setup[KEY_CHOICES_INFRA]
+            if KEY_CHOICES_INFRA_POSTGRESQL in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_POSTGRESQL)
+            if KEY_CHOICES_INFRA_REDIS in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_REDIS)
+            if KEY_CHOICES_INFRA_KAFKA in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_KAFKA)
+            if KEY_CHOICES_INFRA_EXASOL in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_EXASOL)
+            if KEY_CHOICES_INFRA_TEEDY in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_TEEDY)
+            if KEY_CHOICES_INFRA_KEYCLOAK in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_KEYCLOAK)
+        if KEY_CHOICES_SERVICES in setup:
+            choices_services = setup[KEY_CHOICES_SERVICES]
+            if (KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE in choices_services and
+                    not choices_services[KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE]["suspend"]):
+                preselection_services.append(KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE)
+            if (KEY_CHOICES_SERVICES_IAM in choices_services and
+                    not choices_services[KEY_CHOICES_SERVICES_IAM]["suspend"]):
+                preselection_services.append(KEY_CHOICES_SERVICES_IAM)
+            if (KEY_CHOICES_SERVICES_WORKFLOW_ENGINE in choices_services and
+                    not choices_services[KEY_CHOICES_SERVICES_WORKFLOW_ENGINE]["suspend"]):
+                preselection_services.append(KEY_CHOICES_SERVICES_WORKFLOW_ENGINE)
+            if (KEY_CHOICES_SERVICES_QUERY_ENGINE in choices_services and
+                    not choices_services[KEY_CHOICES_SERVICES_QUERY_ENGINE]["suspend"]):
+                preselection_services.append(KEY_CHOICES_SERVICES_QUERY_ENGINE)
+    return preselection_infra, preselection_services
+
+
 def update_infra_choices_with_deps(choices: dict) -> None:
     needed_infrastructure = choices[KEY_CHOICES_INFRA]
     for infra in choices[KEY_CHOICES_INFRA]:
@@ -757,7 +795,7 @@ def store_env_setup(identifier: str, choices: dict, services=SERVICES) -> bool:
         return False
 
 
-def read_env_setup(identifier: str) -> (dict, dict):
+def read_env_setup(identifier: str, file_only: bool = False) -> (dict, dict|None):
     print(f"Reading environment setup ({identifier})")
     try:
         env_file_path = get_environments_dir_path().joinpath(f"{identifier}.yaml")
@@ -765,17 +803,32 @@ def read_env_setup(identifier: str) -> (dict, dict):
         with open(env_file_path, "r") as env_file:
             env_setup_raw = env_file.read()
             env_setup_fs = yaml.load(env_setup_raw, yaml.Loader)
-        args = ("kubectl", "--namespace", "default", "get", "configmap", "pulse8-core-cli-config", "-o", "yaml")
-        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        res: tuple[bytes, bytes] = pipe.communicate()
-        if pipe.returncode == 1:
-            print(f"[bold red]failed collecting information - previous configuration from configmap[/bold red]")
-            print(res[1].decode('utf8'))
-            exit(1)
-        configmap_raw = res[0].decode('utf8')
-        configmap = yaml.load(configmap_raw, yaml.Loader)
-        env_setup_configmap = yaml.load(configmap["data"][f"{identifier}.yaml"], yaml.Loader)
+        if not file_only:
+            args = ("kubectl", "--namespace", "default", "get", "configmap", "pulse8-core-cli-config", "-o", "yaml")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]failed collecting information - previous configuration from configmap[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            configmap_raw = res[0].decode('utf8')
+            configmap = yaml.load(configmap_raw, yaml.Loader)
+            env_setup_configmap = yaml.load(configmap["data"][f"{identifier}.yaml"], yaml.Loader)
+        else:
+            env_setup_configmap = None
         return env_setup_fs, env_setup_configmap
+    except OSError:
+        raise OSError
+
+
+def read_env_setup_from_path(path: Path) -> dict:
+    print(f"Reading environment setup from ({path})")
+    try:
+        env_setup_fs: dict
+        with open(path, "r") as env_file:
+            env_setup_raw = env_file.read()
+            env_setup_fs = yaml.load(env_setup_raw, yaml.Loader)
+        return env_setup_fs
     except OSError:
         raise OSError
 
