@@ -28,7 +28,7 @@ def env_precheck():
         github_user = env_vars[ENV_GITHUB_USER]
         jfrog_token = env_vars[ENV_JFROG_TOKEN]
         jfrog_user = env_vars[ENV_JFROG_USER]
-        print(f"[green]jfrog authentication set[/green]")
+        print(f"[green]JFrog authentication set[/green]")
     except KeyError:
         exit(1)
     create_certificates()
