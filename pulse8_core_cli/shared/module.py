@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import subprocess
 
 from pathlib import Path
 from uuid import uuid4
@@ -10,6 +11,7 @@ from rich import print
 
 from pulse8_core_cli.shared.constants import ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER, ENV_GITHUB_TOKEN
 from pulse8_core_cli.shared.platform_discovery import is_windows
+from pulse8_core_cli.shared.privileges_discovery import is_admin
 
 
 def get_env_variables(silent: bool = False) -> dict[str, any]:
@@ -67,6 +69,80 @@ def git_create_remote(create_remote_repo: str, repository_name: str, github_user
               f"repository. Happy coding![/bold green]")
     else:
         print("[bold green]Committed generated project. Happy coding![/bold green]")
+
+
+def check_create_certificates() -> None:
+    print("creating certificates...")
+    key_path = get_certificates_dir_path().joinpath("key.pem")
+    cert_path = get_certificates_dir_path().joinpath("cert.pem")
+    if cert_path.exists() and key_path.exists():
+        print("[green]certificates already exist[/green]")
+    else:
+        args = ("mkcert", "--install")
+        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res: tuple[bytes, bytes] = pipe.communicate()
+        if pipe.returncode == 1:
+            print(res[1].decode('utf8'))
+            exit(1)
+        print(res[0].decode('utf8'))
+        args = ("mkcert",
+                "-key-file", key_path, "-cert-file", cert_path,
+                "pulse8.dev", "*.pulse8.dev", "localhost", "127.0.0.1", "::1")
+        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res: tuple[bytes, bytes] = pipe.communicate()
+        if pipe.returncode == 1:
+            print(res[1].decode('utf8'))
+            exit(1)
+        print(res[0].decode('utf8'))
+        print("[green]certificates created[/green]")
+
+
+def check_hosts(silent: bool = False) -> bool:
+    hosts_path: Path
+    if is_windows():
+        hosts_path = Path("c:\\Windows\\System32\\Drivers\\etc\\hosts")
+    else:
+        hosts_path = Path("/etc/hosts")
+    hosts_file_raw: str
+    if not silent:
+        print(f"Checking hosts file ({hosts_path})")
+    with open(hosts_path, "r") as hosts_file:
+        hosts_file_raw = hosts_file.read()
+    if "pulse8.dev" in hosts_file_raw:
+        if not silent:
+            print(f"pulse8.dev entries found")
+        return True
+    if not silent:
+        print(f"[red]pulse8.dev entries not found[/red]")
+        if is_windows():
+            print("Run [italic]pulse8 environment init[/italic] "
+                  "as [bold]Administrator[/bold] to add pulse8.dev entries!")
+        else:
+            print("Run [italic]pulse8 environment init[/italic] "
+                  "as [bold]root[/bold] to add pulse8.dev entries!")
+    return False
+
+
+def setup_hosts():
+    if not is_admin():
+        if is_windows():
+            print("[red]Run again as Administrator![/red]")
+        else:
+            print("[red]Run again as root[/red]")
+        exit(1)
+    if check_hosts(silent=True):
+        print(f"Hosts file already set up.")
+        return
+    hosts_path: Path
+    if is_windows():
+        hosts_path = Path("c:\\Windows\\System32\\Drivers\\etc\\hosts")
+    else:
+        hosts_path = Path("/etc/hosts")
+    hosts_file_raw: str
+    print(f"Updating hosts file ({hosts_path})")
+    with open(hosts_path, "a") as hosts_file:
+        hosts_file.write("127.0.0.1 pulse8.dev\n")
+        hosts_file.write("::1 pulse8.dev\n")
 
 
 def get_certificates_dir_path() -> Path:

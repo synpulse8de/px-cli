@@ -4,6 +4,8 @@ import typer
 from rich import print
 
 from pulse8_core_cli.environment.functions import env_create, env_list, env_switch, env_delete, env_update, env_precheck
+from pulse8_core_cli.shared.module import setup_hosts
+
 app = typer.Typer()
 
 
@@ -52,3 +54,11 @@ def delete(identifier: str):
     """
     env_precheck()
     env_delete(identifier=identifier)
+
+
+@app.command()
+def init():
+    """
+    Initialize environments on host machine
+    """
+    setup_hosts()

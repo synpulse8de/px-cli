@@ -16,7 +16,8 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_QUERY_ENGINE, SERVICES, \
     SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES, KEY_CHOICES_INFRA_KEYCLOAK, INFRA_DEPENDENCIES_INFRA
 from pulse8_core_cli.shared.constants import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER
-from pulse8_core_cli.shared.module import get_certificates_dir_path, get_env_variables, get_environments_dir_path
+from pulse8_core_cli.shared.module import get_certificates_dir_path, get_env_variables, get_environments_dir_path, \
+    check_create_certificates, check_hosts
 from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
 
 
@@ -31,7 +32,9 @@ def env_precheck():
         print(f"[green]JFrog authentication set[/green]")
     except KeyError:
         exit(1)
-    create_certificates()
+    check_create_certificates()
+    if not check_hosts():
+        exit(1)
     print("environment precheck done - continue...")
 
 
@@ -149,7 +152,7 @@ def env_update():
 
 def env_install_ingress_nginx() -> None:
     do_default_tls_install: bool
-    args = ("kubectl", "get", "secret", "pulse8-localhost", "--namespace=kube-system")
+    args = ("kubectl", "get", "secret", "pulse8-dev-tls", "--namespace=kube-system")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
@@ -163,7 +166,7 @@ def env_install_ingress_nginx() -> None:
     cert_path = get_certificates_dir_path().joinpath("cert.pem")
     print("Installing default tls certificate")
     args = ("kubectl",
-            "create", "secret", "tls", "pulse8-localhost",
+            "create", "secret", "tls", "pulse8-dev-tls",
             f"--key={str(key_path)}", f"--cert={str(cert_path)}", "--namespace=kube-system")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res: tuple[bytes, bytes] = pipe.communicate()
@@ -176,7 +179,7 @@ def env_install_ingress_nginx() -> None:
     print("\n")
     print("Installing default tls certificate into default namespace")
     args = ("kubectl",
-            "create", "secret", "tls", "pulse8-localhost",
+            "create", "secret", "tls", "pulse8-dev-tls",
             f"--key={str(key_path)}", f"--cert={str(cert_path)}", "--namespace=default")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res: tuple[bytes, bytes] = pipe.communicate()
@@ -733,32 +736,6 @@ def stop_all_env() -> None:
     popen.wait()
     output = popen.stdout.read()
     print(output.decode('utf8'))
-
-
-def create_certificates() -> None:
-    print("creating certificates...")
-    key_path = get_certificates_dir_path().joinpath("key.pem")
-    cert_path = get_certificates_dir_path().joinpath("cert.pem")
-    if cert_path.exists() and key_path.exists():
-        print("[green]certificates already exist[/green]")
-    else:
-        args = ("mkcert", "--install")
-        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        res: tuple[bytes, bytes] = pipe.communicate()
-        if pipe.returncode == 1:
-            print(res[1].decode('utf8'))
-            exit(1)
-        print(res[0].decode('utf8'))
-        args = ("mkcert",
-                "-key-file", key_path, "-cert-file", cert_path,
-                "pulse8.localhost", "*.pulse8.localhost", "localhost", "127.0.0.1", "::1")
-        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        res: tuple[bytes, bytes] = pipe.communicate()
-        if pipe.returncode == 1:
-            print(res[1].decode('utf8'))
-            exit(1)
-        print(res[0].decode('utf8'))
-        print("[green]certificates created[/green]")
 
 
 def store_env_setup(identifier: str, choices: dict, services=SERVICES) -> bool:
