@@ -88,3 +88,9 @@ Run using the main command (for help and available commands use `--help`):
 ```bash
 pulse8
 ```
+
+
+## 😥 Troubleshooting
+
+### Firefox `SEC_ERROR_UNKNOWN_ISSUER`
+[https://github.com/FiloSottile/mkcert/issues/370](https://github.com/FiloSottile/mkcert/issues/370#issuecomment-1280377305)https://github.com/FiloSottile/mkcert/issues/370#issuecomment-1280377305
