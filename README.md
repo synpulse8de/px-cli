@@ -88,3 +88,22 @@ Run using the main command (for help and available commands use `--help`):
 ```bash
 pulse8
 ```
+Firstly you should authenticate to needed infrastructure to work with pulse8 cli commands
+```bash
+pulse8 auth login
+```
+
+
+## 😥 Troubleshooting
+
+### Firefox `SEC_ERROR_UNKNOWN_ISSUER`
+[https://github.com/FiloSottile/mkcert/issues/370](https://github.com/FiloSottile/mkcert/issues/370#issuecomment-1280377305)https://github.com/FiloSottile/mkcert/issues/370#issuecomment-1280377305
+
+### JFrog `lock hasn't been acquired`
+If you encounter timeout (freezing) during JFrog authentication and then a timeout error message "[Error] lock hasn't been acquired", please update JFrog CLI to the latest version
+
+### GitHub `No such file or directory`
+If you get "No such file or directory '.../hosts.yml" (system specific GitHub path) when running commands for templates, it can happen if you did not log in to needed infrastructure using command
+```bash
+pulse8 auth login
+```
