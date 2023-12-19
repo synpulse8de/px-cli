@@ -10,6 +10,7 @@ KEY_CHOICES_SERVICES_IAM = "pulse8-core-iam"
 KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE = "pulse8-core-notification-engine"
 KEY_CHOICES_SERVICES_QUERY_ENGINE = "pulse8-core-query-engine"
 KEY_CHOICES_SERVICES_WORKFLOW_ENGINE = "pulse8-core-workflow-engine"
+KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT = "pulse8-core-document-management"
 
 SERVICES = {
     KEY_CHOICES_SERVICES_IAM: {
@@ -39,7 +40,14 @@ SERVICES = {
         "branch": "develop",
         "ref-name": None,
         "suspend": False
-    }
+    },
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT: {
+        "name": "Pulse8 Core Document Management",
+        "repository": "https://github.com/synpulse-group/pulse8-core-document-management.git",
+        "branch": "main",
+        "ref-name": None,
+        "suspend": False
+    },
 }
 
 INFRA_DEPENDENCIES_INFRA = {
@@ -63,6 +71,9 @@ SERVICES_DEPENDENCIES_INFRA = {
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: [
         KEY_CHOICES_INFRA_POSTGRESQL,
         KEY_CHOICES_INFRA_KAFKA
+    ],
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT: [
+        KEY_CHOICES_INFRA_POSTGRESQL
     ]
 }
 

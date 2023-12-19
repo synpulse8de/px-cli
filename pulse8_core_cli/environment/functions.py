@@ -13,7 +13,8 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_INFRA_REDIS, KEY_CHOICES_INFRA_KAFKA, KEY_CHOICES_INFRA_EXASOL, KEY_CHOICES_INFRA_TEEDY, \
     KEY_CHOICES_SERVICES, KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE, KEY_CHOICES_SERVICES_IAM, \
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_QUERY_ENGINE, SERVICES, \
-    SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES, KEY_CHOICES_INFRA_KEYCLOAK, INFRA_DEPENDENCIES_INFRA
+    SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES, KEY_CHOICES_INFRA_KEYCLOAK, INFRA_DEPENDENCIES_INFRA, \
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT
 from pulse8_core_cli.shared.constants import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER
 from pulse8_core_cli.shared.module import get_certificates_dir_path, get_env_variables, get_environments_dir_path
 from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
@@ -599,8 +600,9 @@ def get_questions(preselection_infra: list[str] = None,
             choices=[
                 KEY_CHOICES_SERVICES_IAM,
                 KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE,
-                KEY_CHOICES_SERVICES_QUERY_ENGINE,
-                KEY_CHOICES_SERVICES_WORKFLOW_ENGINE
+                # KEY_CHOICES_SERVICES_QUERY_ENGINE,
+                KEY_CHOICES_SERVICES_WORKFLOW_ENGINE,
+                KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT
             ],
             default=preselection_services_core,
         )
@@ -623,12 +625,13 @@ def update_infra_choices_with_deps(choices: dict) -> None:
 
 
 def update_service_choices_with_deps(choices: dict) -> None:
-    needed_services_core = choices[KEY_CHOICES_SERVICES]
-    for service_core in choices[KEY_CHOICES_SERVICES]:
-        needed_services_core_for_service = SERVICES_DEPENDENCIES_SERVICES[service_core]
-        needed_services_core = needed_services_core + needed_services_core_for_service
-    needed_services_core = list(set(needed_services_core))
-    choices[KEY_CHOICES_SERVICES] = needed_services_core
+    needed_services = choices[KEY_CHOICES_SERVICES]
+    for service in choices[KEY_CHOICES_SERVICES]:
+        if service in SERVICES_DEPENDENCIES_SERVICES:
+            needed_services_core_for_service = SERVICES_DEPENDENCIES_SERVICES[service]
+            needed_services = needed_services + needed_services_core_for_service
+    needed_services = list(set(needed_services))
+    choices[KEY_CHOICES_SERVICES] = needed_services
     update_infra_choices_with_deps(choices)
 
 
