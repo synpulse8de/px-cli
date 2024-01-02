@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import time
+import winreg
 from pathlib import Path
 
 import typer
@@ -11,6 +12,7 @@ from rich import print
 
 from pulse8_core_cli.shared.module import validate_email, get_env_variables, ENV_JFROG_TOKEN, get_dotm2_dir_path, \
     get_dotdocker_dir_path
+from pulse8_core_cli.shared.platform_discovery import is_windows
 
 
 def auth_login(email: str) -> None:
@@ -28,6 +30,8 @@ def auth_login(email: str) -> None:
         print("You can request access to JFrog here: "
               "[link=https://support.synpulse.com/support/catalog/items/102]JFrog[/link]")
         exit(1)
+
+    adjust_windows_registry()
 
     print("[bold]authenticate against github.com...[bold]")
     os.system("gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web")
@@ -216,3 +220,23 @@ def adjust_git_config(email: str):
         print("email updated in git and username for git changed to " + username)
     except Exception:
         print(f"[bold red]creation of git username from email failed, skipping...[/bold red]")
+
+
+def adjust_windows_registry():
+    if is_windows():
+        reg_file_system_key_read = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE,
+                                                    r"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+                                                    0, winreg.KEY_READ)
+        long_paths_value = winreg.QueryValueEx(reg_file_system_key_read, 'LongPathsEnabled')[0]
+        if long_paths_value == 0:
+            try:
+                reg_file_system_key = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE,
+                                                       r"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+                                                       0, winreg.KEY_SET_VALUE)
+                winreg.SetValueEx(reg_file_system_key, 'LongPathsEnabled', 0, winreg.REG_DWORD, 1)
+            except PermissionError:
+                print("[red]Pulse8 CLI needs to update LongPathsEnabled registry key in order "
+                      "to ensure templates are correctly created. Please run your terminal as "
+                      "Administrator first time to set this value. Next time you don't have to "
+                      "run it as Administrator.[/red]")
+                exit(1)
