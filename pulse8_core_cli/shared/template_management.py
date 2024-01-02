@@ -8,6 +8,7 @@ from pulse8_core_cli.shared.module import (get_env_variables, create_template_tm
 
 
 def template_precheck():
+    print("[bold]running template precheck...[/bold]")
     try:
         env_vars = get_env_variables()
         github_token = env_vars[ENV_GITHUB_TOKEN]
@@ -16,6 +17,7 @@ def template_precheck():
         print("[bold][red]GitHub authentication not set...[/red][/bold]")
         print("[italic]Hint: Try [bold]pulse8 auth login[/bold][/italic]")
         exit(1)
+    print("template precheck done - continue...")
 
 
 def create_template(template_repo_name: str, create_remote_repo: str, answers_file: str, defaults: bool,
