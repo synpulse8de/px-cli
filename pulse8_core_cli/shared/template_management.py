@@ -7,11 +7,25 @@ from pulse8_core_cli.shared.module import (get_env_variables, create_template_tm
                                            rename_template_tmp_dir, git_init, git_create_remote)
 
 
+def template_precheck():
+    print("[bold]running template precheck...[/bold]")
+    try:
+        env_vars = get_env_variables()
+        github_token = env_vars[ENV_GITHUB_TOKEN]
+        github_user = env_vars[ENV_GITHUB_USER]
+    except KeyError:
+        print("[bold][red]GitHub authentication not set...[/red][/bold]")
+        print("[italic]Hint: Try [bold]pulse8 auth login[/bold][/italic]")
+        exit(1)
+    print("template precheck done - continue...")
+
+
 def create_template(template_repo_name: str, create_remote_repo: str, answers_file: str, defaults: bool,
                     skip_answered: bool, callback_before_git_init=None):
-    env_variables = get_env_variables()
-    github_user = env_variables[ENV_GITHUB_USER]
-    github_token = env_variables[ENV_GITHUB_TOKEN]
+    template_precheck()
+    env_vars = get_env_variables(silent=True)
+    github_token = env_vars[ENV_GITHUB_TOKEN]
+    github_user = env_vars[ENV_GITHUB_USER]
 
     if create_remote_repo is None:
         create_remote_input = typer.prompt(
@@ -42,6 +56,8 @@ def create_template(template_repo_name: str, create_remote_repo: str, answers_fi
 
 
 def update_template(answers_file: str, defaults: bool, skip_answered: bool):
+    template_precheck()
+
     print("Pulling latest template data...")
 
     run_update(".", overwrite=True, unsafe=True, defaults=defaults,

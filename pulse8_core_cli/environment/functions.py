@@ -22,7 +22,7 @@ from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
 
 
 def env_precheck():
-    print("[bold]running environment precheck...[bold]")
+    print("[bold]running environment precheck...[/bold]")
     try:
         env_vars = get_env_variables()
         github_token = env_vars[ENV_GITHUB_TOKEN]
@@ -31,6 +31,8 @@ def env_precheck():
         jfrog_user = env_vars[ENV_JFROG_USER]
         print(f"[green]JFrog authentication set[/green]")
     except KeyError:
+        print("[bold][red]environment precheck failed - env variables not set...[/red][/bold]")
+        print("[italic]Hint: Try [bold]pulse8 auth login[/bold][/italic]")
         exit(1)
     create_certificates()
     print("environment precheck done - continue...")
