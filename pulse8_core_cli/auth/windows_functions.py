@@ -1,5 +1,6 @@
 import winreg
 
+from rich import print
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
 
