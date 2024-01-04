@@ -110,7 +110,8 @@ pulse8 auth login
 
 ### command not found: pulse8
 The logs state messages like these:
+```
 WARNING: The scripts p8 and pulse8 are installed in '<somepath>' which is not on PATH.
 Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location
-
+```
 Just add the <somepath> from the message to your PATH.
