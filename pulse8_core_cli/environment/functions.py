@@ -15,7 +15,7 @@ from pulse8_core_cli.environment.constants import KEY_CHOICES_INFRA, KEY_CHOICES
     KEY_CHOICES_SERVICES, KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE, KEY_CHOICES_SERVICES_IAM, \
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE, KEY_CHOICES_SERVICES_QUERY_ENGINE, SERVICES, \
     SERVICES_DEPENDENCIES_INFRA, SERVICES_DEPENDENCIES_SERVICES, KEY_CHOICES_INFRA_KEYCLOAK, INFRA_DEPENDENCIES_INFRA, \
-    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT, KEY_CHOICES_INFRA_SPARK
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT, KEY_CHOICES_INFRA_SPARK, KEY_CHOICES_INFRA_MINIO
 from pulse8_core_cli.shared.constants import ENV_GITHUB_TOKEN, ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER
 from pulse8_core_cli.shared.module import get_certificates_dir_path, get_env_variables, get_environments_dir_path
 from pulse8_core_cli.shared.platform_discovery import is_cpu_arm
@@ -402,6 +402,30 @@ def env_install_choices(choices: dict, choices_old: dict | None = None, services
                 exit(1)
             print(f"[green]Installed Apache Spark using Flux[/green]")
             print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_MINIO in infra:
+            print("Installing MinIO using Flux...")
+            args = ("flux", "create", "source", "git", "pulse8-core-env-minio-repo",
+                    "--url=https://github.com/synpulse-group/pulse8-core-env-minio.git", "--branch=main",
+                    "--secret-ref=github-token")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install MinIO git source using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed MinIO git source using Flux[/green]")
+            print(res[0].decode('utf8'))
+            args = ("flux", "create", "kustomization", "pulse8-core-env-minio",
+                    "--source=GitRepository/pulse8-core-env-minio-repo", "--interval=1m", "--prune=true",
+                    "--target-namespace=default")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install MinIO using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed MinIO using Flux[/green]")
+            print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -543,6 +567,25 @@ def env_install_choices(choices: dict, choices_old: dict | None = None, services
                     exit(1)
                 print(f"[green]Uninstalled Apache Spark using Flux[/green]")
                 print(res[0].decode('utf8'))
+            if KEY_CHOICES_INFRA_MINIO not in choices_infra and KEY_CHOICES_INFRA_MINIO in choices_infra_old:
+                print("Uninstalling MinIO using Flux...")
+                args = ("flux", "delete", "source", "git", "pulse8-core-env-minio-repo", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall MinIO git source using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(res[0].decode('utf8'))
+                args = ("flux", "delete", "kustomization", "pulse8-core-env-minio", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall MinIO using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(f"[green]Uninstalled MinIO using Flux[/green]")
+                print(res[0].decode('utf8'))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
@@ -601,7 +644,8 @@ def get_questions(preselection_infra: list[str] = None,
             # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
-            ("Apache Spark", KEY_CHOICES_INFRA_KEYCLOAK),
+            ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
+            ("MinIO", KEY_CHOICES_INFRA_MINIO),
         ]
     else:
         choices_infra = [
@@ -611,7 +655,8 @@ def get_questions(preselection_infra: list[str] = None,
             ("Exasol", KEY_CHOICES_INFRA_EXASOL),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
-            ("Apache Spark", KEY_CHOICES_INFRA_KEYCLOAK),
+            ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
+            ("MinIO", KEY_CHOICES_INFRA_MINIO),
         ]
     questions = [
         inquirer.Checkbox(
@@ -680,6 +725,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_KEYCLOAK)
             if KEY_CHOICES_INFRA_SPARK in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_SPARK)
+            if KEY_CHOICES_INFRA_MINIO in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_MINIO)
         if KEY_CHOICES_SERVICES in setup:
             choices_services = setup[KEY_CHOICES_SERVICES]
             if (KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE in choices_services and
