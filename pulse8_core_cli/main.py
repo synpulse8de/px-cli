@@ -4,6 +4,7 @@ from pulse8_core_cli.environment import module as environment_module
 from pulse8_core_cli.auth import module as auth_module
 from pulse8_core_cli.backend import module as backend_module
 from pulse8_core_cli.backend_fastapi import module as backend_fastapi_module
+from pulse8_core_cli.backend_shared_lib import module as backend_shared_lib_module
 from pulse8_core_cli.frontend import module as frontend_module
 from pulse8_core_cli.frontend_angular import module as frontend_angular_module
 
@@ -20,6 +21,10 @@ pulse8_cli.add_typer(backend_module.app, name="backend",
 
 pulse8_cli.add_typer(backend_fastapi_module.app, name="backend-fastapi",
                      help="Manage Pulse8 FastAPI backends",
+                     no_args_is_help=True)
+
+pulse8_cli.add_typer(backend_shared_lib_module.app, name="backend-shared-lib",
+                     help="Manage Pulse8 Java backend shared libs",
                      no_args_is_help=True)
 
 pulse8_cli.add_typer(environment_module.app, name="environment",
