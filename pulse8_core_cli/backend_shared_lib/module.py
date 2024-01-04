@@ -7,14 +7,6 @@ app = typer.Typer()
 
 
 @app.command()
-def dev():
-    """
-    Develop on an existing backend shared lib
-    """
-    print(f"[WIP]...")
-
-
-@app.command()
 def create(answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
            create_remote_repository: Annotated[str,
            typer.Option(help="Create remote repository [options: no/private/internal]")] = None,
@@ -40,13 +32,5 @@ def update(answers_file: Annotated[str, typer.Option(help="Copier answers file p
 def delete():
     """
     Delete an existing backend shared lib
-    """
-    print(f"[WIP]...")
-
-
-@app.command()
-def deploy():
-    """
-    Start the deployment workflow for an existing backend shared lib
     """
     print(f"[WIP]...")
