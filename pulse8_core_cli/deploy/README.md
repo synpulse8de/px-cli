@@ -28,7 +28,7 @@
         - Ensure that a local clone of `pulse8-app-deployments` exists
         - checkout to `main`, and `git pull` to ensure it is up to date
     - Prompts:
-        - Select: Target cluster (based on which clusters are available in `/clusters/` folder of deployments repo)
+        - ~~Select: Target cluster (based on which clusters are available in `/clusters/` folder of deployments repo)~~ (removed from MVP, anyway we just have the one cluster atm)
         - Text input: Project name (automate this, based on repo name perhaps?)
         - Text input: Port selection
         - Select: Want database? (if yes --> create configmap entry + external secret, figure out how to update `databases.tf` so it gets generated)
@@ -50,7 +50,7 @@
     my-project/
     ├── k8s/
     │   ├── $NAME_OF_CLUSTER/ # 'real' deployment we're building/
-    │   │   └── k8s/
+    │   │   └── k8s/ # add a gitignore here, nothing should be checked in.
     │   │       ├── base/ # base is always included
     │   │       ├── dev/  # if selected
     │   │       ├── uat/  # if selected
