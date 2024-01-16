@@ -7,6 +7,7 @@ from pulse8_core_cli.backend_fastapi import module as backend_fastapi_module
 from pulse8_core_cli.backend_shared_lib import module as backend_shared_lib_module
 from pulse8_core_cli.frontend import module as frontend_module
 from pulse8_core_cli.frontend_angular import module as frontend_angular_module
+from pulse8_core_cli.deploy import module as deploy_module
 
 pulse8_cli = typer.Typer(no_args_is_help=True)
 
@@ -37,6 +38,10 @@ pulse8_cli.add_typer(frontend_module.app, name="frontend",
 
 pulse8_cli.add_typer(frontend_angular_module.app, name="frontend-angular",
                      help="Manage Pulse8 Angular frontends",
+                     no_args_is_help=True)
+
+pulse8_cli.add_typer(deploy_module.app, name="deploy",
+                     help="Set up Kubernetes manifests and deploy Pulse8 applications",
                      no_args_is_help=True)
 
 
