@@ -2,7 +2,7 @@ import typer
 from copier import run_copy, run_update
 from rich import print
 
-from pulse8_core_cli.shared.constants import ENV_GITHUB_USER, ENV_GITHUB_TOKEN, REPOSITORY_PRIVATE, REPOSITORY_INTERNAL
+from pulse8_core_cli.shared.constants import ENV_GITHUB_USER, ENV_GITHUB_TOKEN
 from pulse8_core_cli.shared.module import (get_env_variables, create_template_tmp_dir,
                                            rename_template_tmp_dir, git_init, git_create_remote)
 
@@ -20,7 +20,7 @@ def template_precheck():
     print("template precheck done - continue...")
 
 
-def create_template(template_repo_name: str, create_remote_repo: str, answers_file: str, defaults: bool,
+def create_template(template_repo_name: str, create_remote_repo: bool, answers_file: str, defaults: bool,
                     skip_answered: bool, callback_before_git_init=None):
     template_precheck()
     env_vars = get_env_variables(silent=True)
@@ -28,13 +28,7 @@ def create_template(template_repo_name: str, create_remote_repo: str, answers_fi
     github_user = env_vars[ENV_GITHUB_USER]
 
     if create_remote_repo is None:
-        create_remote_input = typer.prompt(
-            "Do you want to create private or internal repository ? [no/private/internal]")
-
-        if create_remote_input == REPOSITORY_PRIVATE or create_remote_input == REPOSITORY_INTERNAL:
-            create_remote_repo = create_remote_input
-    elif create_remote_repo != REPOSITORY_PRIVATE and create_remote_repo != REPOSITORY_INTERNAL:
-        create_remote_repo = None
+        create_remote_repo = typer.confirm("Do you want to create private remote repository ?")
 
     print("Pulling latest template data...")
 
