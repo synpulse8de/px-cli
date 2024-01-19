@@ -15,7 +15,7 @@ app = typer.Typer()
 
 
 @app.command()
-def bootstrap():
+def create():
     """
     Prepare a set of deployment-ready manifests based on the details of your project.
     """
@@ -52,45 +52,36 @@ def init():
         repo_name=get_deployments_git_repo(),
         branch_name="main",
     )
-    
+
     # parse project name
     input_project_name = typer.prompt("What is the name of your project?")
     input_deployment_port = typer.prompt("What is the port of your deployment?")
-    
-    
-    project_manifests_directory = deployments_repo_directory.joinpath("clusters/aws/105815711361/pulse8-cluster-primary").joinpath(input_project_name)
-    
+
+    project_manifests_directory = deployments_repo_directory.joinpath(
+        "clusters/aws/105815711361/pulse8-cluster-primary"
+    ).joinpath(input_project_name)
+
     # ask which registry it is using
-    
+
     # check if this project exists in the deployments repo - if so, what to do?
-    
+
     deployment = DeploymentManifests(
         name=input_project_name,
         image="nginx:1.19.10",
         imagePullSecrets=[],
         resources={
-            "limits" : {
-                "cpu": "100m",
-                "memory": "128Mi"
-            },
-            "requests": {
-                "cpu": "100m",
-                "memory": "128Mi"
-            },
+            "limits": {"cpu": "100m", "memory": "128Mi"},
+            "requests": {"cpu": "100m", "memory": "128Mi"},
         },
         port=input_deployment_port,
-        github_repo_path="https://github.com/synpulse-group/pulse8-core-cli"
+        github_repo_path="https://github.com/synpulse-group/pulse8-core-cli",
     )
-    
-    
+
     # Should I dump this into the local project's folder, or directly to the app deployments repo?
-    deployment.dump_base_layer(
-        project_manifests_directory
-    )    
-    
+    deployment.dump_base_layer(project_manifests_directory)
+
     # for each env, we need the layer to:
     # - set up configs
     # - set up secrets
     # - set up imageautomation
     # - dump in the right place
-    

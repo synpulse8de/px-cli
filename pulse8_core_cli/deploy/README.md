@@ -2,16 +2,16 @@
 
 ## High-level commands
 
-- `bootstrap` - collect all information
-- `update` - similar to bootstrap but edit existing info
+- `create` - collect all information
+- `update` - similar to create but edit existing info
 - `submit` - submit a deployment configuration for deployment (e.g. sync repo, branch out, open PR)
 
-### `bootstrap` / `update`
+### `create` / `update`
 
 1. Authenticate/set up CLI
 1. **TBC: Whether this is (a) something that runs in the background or a separate command**
     - Clone `pulse8-app-deployments` into some temp folder managed by the CLI for later use
-    - This info is a must so that we can have the right configuration options available for `bootstrap`
+    - This info is a must so that we can have the right configuration options available for `create`
 1. Navigate to the root of the project/directory they wish to deploy, e.g. `my-project` as shown below
 
     ```bash
@@ -23,7 +23,7 @@
     └── README.md
     ```
 
-1. Run `deploy bootstrap`
+1. Run `deploy create`
     - Validate/pre-work:
         - Ensure that a local clone of `pulse8-app-deployments` exists
         - checkout to `main`, and `git pull` to ensure it is up to date
@@ -63,7 +63,7 @@
 
 ### `submit`
 
-1. Check that project has the proper deployment manifests (i.e. ensure `bootstrap` has been ran at least once)
+1. Check that project has the proper deployment manifests (i.e. ensure `create` has been ran at least once)
 1. Update the `pulse8-app-deployments` repo managed by the CLI
 1. Checkout to new branch `feat/add-deployment/$REPO_NAME` (If a branch exists, perhaps delete it first? we need to be fresh)
 1. Copy contents:
