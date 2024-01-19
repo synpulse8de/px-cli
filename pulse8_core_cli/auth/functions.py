@@ -10,57 +10,77 @@ import typer
 from rich import print
 
 from pulse8_core_cli.shared.platform_discovery import is_windows
-from pulse8_core_cli.shared.module import validate_email, get_env_variables, get_dotm2_dir_path, \
-    get_dotdocker_dir_path
+from pulse8_core_cli.shared.module import (
+    validate_email,
+    get_env_variables,
+    get_dotm2_dir_path,
+    get_dotdocker_dir_path,
+)
+
 if is_windows():
     from pulse8_core_cli.auth.windows_functions import adjust_windows_registry
 
 
 def auth_login(email: str) -> None:
     if not validate_email(email):
-        print(f"[bold red]your provided email {email} should fulfill the "
-              f"pattern firstname.lastname@synpulse.com or @synpulse8.com...[/bold red]")
+        print(
+            f"[bold red]your provided email {email} should fulfill the "
+            f"pattern firstname.lastname@synpulse.com or @synpulse8.com...[/bold red]"
+        )
         exit(1)
 
     has_synpulse_access = typer.confirm(
-        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?")
+        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?"
+    )
     if not has_synpulse_access:
-        print("[bold red]Please request access to GitHub and JFrog to continue.[/bold red]")
-        print("You can request access to GitHub here: "
-              "[link=https://support.synpulse.com/support/catalog/items/79]GitHub[/link]")
-        print("You can request access to JFrog here: "
-              "[link=https://support.synpulse.com/support/catalog/items/102]JFrog[/link]")
+        print(
+            "[bold red]Please request access to GitHub and JFrog to continue.[/bold red]"
+        )
+        print(
+            "You can request access to GitHub here: "
+            "[link=https://support.synpulse.com/support/catalog/items/79]GitHub[/link]"
+        )
+        print(
+            "You can request access to JFrog here: "
+            "[link=https://support.synpulse.com/support/catalog/items/102]JFrog[/link]"
+        )
         exit(1)
 
     if is_windows():
         adjust_windows_registry()
 
     print("[bold]authenticate against github.com...[bold]")
-    os.system("gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web")
+    os.system(
+        "gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web"
+    )
     adjust_git_config(email)
     print("[bold]authenticate against synpulse.jfrog.io...[bold]")
-    print("[italic]"
-          "Help: "
-          "Save and continue, Web Login, No client certificate, Login in Browser using 'SAML SSO'"
-          "[/italic]")
-    os.system("jf config add synpulse.jfrog.io --url https://synpulse.jfrog.io --overwrite=true")
+    print(
+        "[italic]"
+        "Help: "
+        "Save and continue, Web Login, No client certificate, Login in Browser using 'SAML SSO'"
+        "[/italic]"
+    )
+    os.system(
+        "jf config add synpulse.jfrog.io --url https://synpulse.jfrog.io --overwrite=true"
+    )
     print("creating of access token...")
     args = ("jf", "rt", "access-token-create", "--expiry", "31535999")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = pipe.communicate()
     if pipe.returncode == 1:
         print(f"[bold red]creation of access token failed[/bold red]")
-        print(stderr.decode('utf8'))
+        print(stderr.decode("utf8"))
         exit(1)
-    access_token_result_raw = stdout.decode('utf8')
+    access_token_result_raw = stdout.decode("utf8")
     access_token_dict = json.loads(access_token_result_raw)
-    access_token: str = access_token_dict['access_token']
+    access_token: str = access_token_dict["access_token"]
     print("created access token")
     print("[italic]Hint: Token expires in one year[/italic]")
     docker_auth_raw = f"{email}:{access_token}"
-    docker_auth_raw_bytes = docker_auth_raw.encode('utf8')
+    docker_auth_raw_bytes = docker_auth_raw.encode("utf8")
     docker_auth_encoded_bytes = base64.b64encode(docker_auth_raw_bytes)
-    docker_auth_encoded = docker_auth_encoded_bytes.decode('utf8')
+    docker_auth_encoded = docker_auth_encoded_bytes.decode("utf8")
     docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
     with open(docker_config_json_path) as docker_config_json_file:
         docker_config_json_raw = docker_config_json_file.read()
@@ -74,10 +94,14 @@ def auth_login(email: str) -> None:
         docker_config_json_auths_spjfrog = docker_config_json_auths["synpulse.jfrog.io"]
     except KeyError:
         try:
-            docker_config_json_auths_spjfrog = docker_config_json_auths["https://synpulse.jfrog.io"]
+            docker_config_json_auths_spjfrog = docker_config_json_auths[
+                "https://synpulse.jfrog.io"
+            ]
         except KeyError:
             docker_config_json_auths["synpulse.jfrog.io"] = dict()
-            docker_config_json_auths_spjfrog = docker_config_json_auths["synpulse.jfrog.io"]
+            docker_config_json_auths_spjfrog = docker_config_json_auths[
+                "synpulse.jfrog.io"
+            ]
     docker_config_json_auths_spjfrog["auth"] = docker_auth_encoded
     docker_config_json_auths_spjfrog["email"] = email
     with open(docker_config_json_path, "w") as docker_config_json_file:
@@ -99,7 +123,9 @@ def check_npmrc_ready() -> bool:
         npmrc_raw = npmrc_file.read()
     if "@s8:registry" in npmrc_raw:
         print("~/.npmrc @s8 is set up")
-        print("[italic]Hint: if you have problems cleanup the @s8 settings from ~/.npmrc[/italic]")
+        print(
+            "[italic]Hint: if you have problems cleanup the @s8 settings from ~/.npmrc[/italic]"
+        )
         return True
     print("~/.npmrc @s8 is not set up")
     return False
@@ -113,10 +139,16 @@ def check_maven_ready() -> bool:
     maven_settings_raw: str
     with open(maven_settings_file_path) as maven_settings_file:
         maven_settings_raw = maven_settings_file.read()
-    if "<url>https://synpulse.jfrog.io/artifactory/s8-libs-release</url>" in maven_settings_raw and \
-            "<url>https://synpulse.jfrog.io/artifactory/s8-libs-snapshot</url>" in maven_settings_raw:
+    if (
+        "<url>https://synpulse.jfrog.io/artifactory/s8-libs-release</url>"
+        in maven_settings_raw
+        and "<url>https://synpulse.jfrog.io/artifactory/s8-libs-snapshot</url>"
+        in maven_settings_raw
+    ):
         print("~/.m2/settings.xml s8-libs-release and s8-libs-snapshot is set up")
-        print("[italic]Hint: if you have problems cleanup the settings from ~/.m2/settings.xml[/italic]")
+        print(
+            "[italic]Hint: if you have problems cleanup the settings from ~/.m2/settings.xml[/italic]"
+        )
         return True
     print("~/.m2/settings.xml s8-libs-release and s8-libs-snapshot is not set up")
     return False
@@ -127,8 +159,12 @@ def setup_maven(token: str, email: str) -> None:
     curr_time = time.time()
     maven_settings_file_path = get_dotm2_dir_path().joinpath("settings.xml")
     if maven_settings_file_path.exists():
-        maven_settings_file_backup_path = get_dotm2_dir_path().joinpath(f"settings.xml.backup-{curr_time}")
-        print(f"performing backup of maven settings to [italic](~/.m2/settings.xml.backup-{curr_time})[/italic]...")
+        maven_settings_file_backup_path = get_dotm2_dir_path().joinpath(
+            f"settings.xml.backup-{curr_time}"
+        )
+        print(
+            f"performing backup of maven settings to [italic](~/.m2/settings.xml.backup-{curr_time})[/italic]..."
+        )
         shutil.copyfile(maven_settings_file_path, maven_settings_file_backup_path)
     jfrog_snippet = f"""<?xml version="1.0" encoding="UTF-8"?>
 <settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 http://maven.apache.org/xsd/settings-1.2.0.xsd" xmlns="http://maven.apache.org/SETTINGS/1.2.0"
@@ -197,7 +233,9 @@ def setup_npmrc(token: str, email: str) -> None:
     npmrc_file_path = Path.home().joinpath(".npmrc")
     if npmrc_file_path.exists():
         npmrc_file_backup_path = Path.home().joinpath(f".npmrc.backup-{curr_time}")
-        print(f"performing backup of npm settings to [italic](~/.npmrc.backup-{curr_time})[/italic]...")
+        print(
+            f"performing backup of npm settings to [italic](~/.npmrc.backup-{curr_time})[/italic]..."
+        )
         shutil.copyfile(npmrc_file_path, npmrc_file_backup_path)
     jfrog_snippet = f"""@s8:registry=https://synpulse.jfrog.io/artifactory/api/npm/s8-npm/
 //synpulse.jfrog.io/artifactory/api/npm/s8-npm/:_auth={token}
@@ -221,4 +259,6 @@ def adjust_git_config(email: str):
         os.system('git config --global user.email "' + email + '"')
         print("email updated in git and username for git changed to " + username)
     except Exception:
-        print(f"[bold red]creation of git username from email failed, skipping...[/bold red]")
+        print(
+            f"[bold red]creation of git username from email failed, skipping...[/bold red]"
+        )
