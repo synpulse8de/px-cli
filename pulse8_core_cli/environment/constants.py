@@ -18,71 +18,61 @@ SERVICES = {
         "repository": "https://github.com/synpulse-group/pulse8-core-iam.git",
         "branch": "develop",
         "ref-name": None,
-        "suspend": False
+        "suspend": False,
     },
     KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE: {
         "name": "Pulse8 Core Notification Engine",
         "repository": "https://github.com/synpulse-group/pulse8-core-notification-engine.git",
         "branch": "develop",
         "ref-name": None,
-        "suspend": False
+        "suspend": False,
     },
     KEY_CHOICES_SERVICES_QUERY_ENGINE: {
         "name": "Pulse8 Core Query Engine",
         "repository": "https://github.com/synpulse-group/pulse8-core-backend-queryengine.git",
         "branch": "main",
         "ref-name": None,
-        "suspend": False
+        "suspend": False,
     },
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: {
         "name": "Pulse8 Core Workflow Engine",
         "repository": "https://github.com/synpulse-group/pulse8-core-workflow-engine.git",
         "branch": "develop",
         "ref-name": None,
-        "suspend": False
+        "suspend": False,
     },
     KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT: {
         "name": "Pulse8 Core Document Management",
         "repository": "https://github.com/synpulse-group/pulse8-core-document-management.git",
         "branch": "main",
         "ref-name": None,
-        "suspend": False
+        "suspend": False,
     },
 }
 
-INFRA_DEPENDENCIES_INFRA = {
-    KEY_CHOICES_INFRA_KEYCLOAK: [
-        KEY_CHOICES_INFRA_POSTGRESQL
-    ]
-}
+INFRA_DEPENDENCIES_INFRA = {KEY_CHOICES_INFRA_KEYCLOAK: [KEY_CHOICES_INFRA_POSTGRESQL]}
 
 SERVICES_DEPENDENCIES_INFRA = {
     KEY_CHOICES_SERVICES_IAM: [
         KEY_CHOICES_INFRA_KEYCLOAK,
         KEY_CHOICES_INFRA_POSTGRESQL,
-        KEY_CHOICES_INFRA_KAFKA
+        KEY_CHOICES_INFRA_KAFKA,
     ],
-    KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE: [
-        KEY_CHOICES_INFRA_KAFKA
-    ],
-    KEY_CHOICES_SERVICES_QUERY_ENGINE: [
-        KEY_CHOICES_INFRA_POSTGRESQL
-    ],
+    KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE: [KEY_CHOICES_INFRA_KAFKA],
+    KEY_CHOICES_SERVICES_QUERY_ENGINE: [KEY_CHOICES_INFRA_POSTGRESQL],
     KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: [
         KEY_CHOICES_INFRA_POSTGRESQL,
-        KEY_CHOICES_INFRA_KAFKA
+        KEY_CHOICES_INFRA_KAFKA,
     ],
-    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT: [
-        KEY_CHOICES_INFRA_POSTGRESQL
-    ]
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT: [KEY_CHOICES_INFRA_POSTGRESQL],
 }
 
 SERVICES_DEPENDENCIES_SERVICES = {
     KEY_CHOICES_SERVICES_IAM: [
         KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE,
-        KEY_CHOICES_SERVICES_WORKFLOW_ENGINE
+        KEY_CHOICES_SERVICES_WORKFLOW_ENGINE,
     ],
     KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE: [],
     KEY_CHOICES_SERVICES_QUERY_ENGINE: [],
-    KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: []
+    KEY_CHOICES_SERVICES_WORKFLOW_ENGINE: [],
 }

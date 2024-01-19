@@ -21,7 +21,4 @@ __pycache__/
 # Ignore JetBrains IDE settings
 .idea/
 
-# Ignore Visual Studio Code settings
-.vscode/
-
 choices.yaml
