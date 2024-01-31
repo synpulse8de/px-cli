@@ -8,22 +8,34 @@ from uuid import uuid4
 import yaml
 from rich import print
 
-from pulse8_core_cli.shared.constants import ENV_GITHUB_USER, ENV_JFROG_TOKEN, ENV_JFROG_USER, ENV_GITHUB_TOKEN
+from pulse8_core_cli.shared.constants import (
+    ENV_GITHUB_USER,
+    ENV_JFROG_TOKEN,
+    ENV_JFROG_USER,
+    ENV_GITHUB_TOKEN,
+)
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
 
 def get_env_variables(silent: bool = False) -> dict[str, any]:
     try:
-
         config_github_cli_path: Path
         try:
             if is_windows():
-                config_github_cli_path = Path(os.getenv('APPDATA')).joinpath("GitHub CLI").joinpath("hosts.yml")
+                config_github_cli_path = (
+                    Path(os.getenv("APPDATA"))
+                    .joinpath("GitHub CLI")
+                    .joinpath("hosts.yml")
+                )
             else:
-                config_github_cli_path = Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
+                config_github_cli_path = (
+                    Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
+                )
         except Exception as e:
             print(f"[red]Error reading from GitHub CLI hosts.yml[/red]")
-            print(f"[italic]Hint: Please try to reauthorize using [bold]pulse8 auth login[/bold][/italic]")
+            print(
+                f"[italic]Hint: Please try to reauthorize using [bold]pulse8 auth login[/bold][/italic]"
+            )
             raise e
         config_github_cli_file_raw: str
         with open(config_github_cli_path) as config_github_cli_file:
@@ -41,32 +53,48 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         docker_config_json = json.loads(docker_config_json_raw)
         jfrog_token = docker_config_json["auths"]["synpulse.jfrog.io"]["auth"]
         jfrog_user = docker_config_json["auths"]["synpulse.jfrog.io"]["email"]
-        return {ENV_GITHUB_USER: github_user, ENV_GITHUB_TOKEN: github_token,
-                ENV_JFROG_TOKEN: jfrog_token, ENV_JFROG_USER: jfrog_user}
+        return {
+            ENV_GITHUB_USER: github_user,
+            ENV_GITHUB_TOKEN: github_token,
+            ENV_JFROG_TOKEN: jfrog_token,
+            ENV_JFROG_USER: jfrog_user,
+        }
     except KeyError:
-        print("[bold red]Error retrieving environment variables - please use 'pulse8 auth login'[/bold red]")
+        print(
+            "[bold red]Error retrieving environment variables - please use 'pulse8 auth login'[/bold red]"
+        )
         exit(1)
 
 
 def git_init():
-    os.system('git init')
-    os.system('git add .')
+    os.system("git init")
+    os.system("git add .")
     os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
-    os.system('git branch -M main')
-    current_git_path = os.getcwd().replace('\\', '/')
-    os.system(f'git config --global --add safe.directory {current_git_path}')
+    os.system("git branch -M main")
+    current_git_path = os.getcwd().replace("\\", "/")
+    os.system(f"git config --global --add safe.directory {current_git_path}")
 
 
-def git_create_remote(create_remote_repo: str, repository_name: str, github_user: str, github_token: str):
+def git_create_remote(
+    create_remote_repo: str, repository_name: str, github_user: str, github_token: str
+):
     if create_remote_repo is not None:
-        print(f"[green]Creating {create_remote_repo} repository {repository_name}[/green]")
+        print(
+            f"[green]Creating {create_remote_repo} repository {repository_name}[/green]"
+        )
 
-        os.system(f"gh repo create {repository_name} --{create_remote_repo} --source=. --remote=upstream")
-        os.system(f"git remote add origin https://{github_token}@github.com/{github_user}/{repository_name}.git")
+        os.system(
+            f"gh repo create {repository_name} --{create_remote_repo} --source=. --remote=upstream"
+        )
+        os.system(
+            f"git remote add origin https://{github_token}@github.com/{github_user}/{repository_name}.git"
+        )
         os.system("git push -u origin main")
 
-        print(f"[bold green]Pushed generated project to newly created {create_remote_repo} "
-              f"repository. Happy coding![/bold green]")
+        print(
+            f"[bold green]Pushed generated project to newly created {create_remote_repo} "
+            f"repository. Happy coding![/bold green]"
+        )
     else:
         print("[bold green]Committed generated project. Happy coding![/bold green]")
 
@@ -96,7 +124,7 @@ def get_dotm2_dir_path() -> Path:
 
 
 def validate_email(email):
-    pattern = r'^[a-zA-Z]+\.[a-zA-Z]+@(synpulse\.com|synpulse8\.com)$'
+    pattern = r"^[a-zA-Z]+\.[a-zA-Z]+@(synpulse\.com|synpulse8\.com)$"
     if re.match(pattern, email):
         return True
     return False
@@ -114,4 +142,3 @@ def rename_template_tmp_dir(tmp_dir, new_name):
     tmp_dir = tmp_dir.rename(new_name)
     os.chdir(tmp_dir)
     return tmp_dir
-
