@@ -1,7 +1,7 @@
 import typer
 from typing_extensions import Annotated
 
-from pulse8_core_cli.backend.functions import backend_create, backend_update
+from pulse8_core_cli.backend.functions import backend_create, backend_update, backend_release
 
 app = typer.Typer()
 
@@ -62,3 +62,11 @@ def deploy():
     Start the deployment workflow for an existing backend
     """
     print(f"[WIP]...")
+
+
+@app.command()
+def release(version: str, title: str):
+    """
+    Create a GitHub release for an existing backend
+    """
+    backend_release(version, title)
