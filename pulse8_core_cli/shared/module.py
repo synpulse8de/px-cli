@@ -140,3 +140,10 @@ def rename_template_tmp_dir(tmp_dir, new_name):
     tmp_dir = tmp_dir.rename(new_name)
     os.chdir(tmp_dir)
     return tmp_dir
+
+
+def get_maven_wrapper_executable():
+    if is_windows():
+        return "mvnw.cmd"
+    else:
+        return "./mvnw"

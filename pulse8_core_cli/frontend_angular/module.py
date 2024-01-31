@@ -4,6 +4,7 @@ from typing_extensions import Annotated
 from pulse8_core_cli.frontend_angular.functions import (
     frontend_angular_create,
     frontend_angular_update,
+    frontend_angular_release,
 )
 
 app = typer.Typer()
@@ -67,3 +68,11 @@ def deploy():
     Start the deployment workflow for an existing frontend
     """
     print(f"[WIP]...")
+
+
+@app.command()
+def release(version: str, title: str):
+    """
+    Create a GitHub release for an existing frontend
+    """
+    frontend_angular_release(version, title)

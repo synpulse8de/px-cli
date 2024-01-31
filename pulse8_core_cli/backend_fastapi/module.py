@@ -5,6 +5,7 @@ import typer
 from pulse8_core_cli.backend_fastapi.functions import (
     backend_fastapi_update,
     backend_fastapi_create,
+    backend_fastapi_release,
 )
 
 app = typer.Typer()
@@ -68,3 +69,11 @@ def deploy():
     Start the deployment workflow for an existing backend
     """
     print(f"[WIP]...")
+
+
+@app.command()
+def release(version: str, title: str):
+    """
+    Create a GitHub release for an existing backend
+    """
+    backend_fastapi_release(version, title)

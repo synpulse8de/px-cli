@@ -3,7 +3,7 @@ from typing import Annotated
 import typer
 
 from rich import print
-from pulse8_core_cli.frontend.functions import frontend_create, frontend_update
+from pulse8_core_cli.frontend.functions import frontend_create, frontend_update, frontend_release
 
 app = typer.Typer()
 
@@ -64,3 +64,11 @@ def deploy():
     Start the deployment workflow for an existing frontend
     """
     print(f"[WIP]...")
+
+
+@app.command()
+def release(version: str, title: str):
+    """
+    Create a GitHub release for an existing frontend
+    """
+    frontend_release(version, title)

@@ -4,6 +4,7 @@ from typing_extensions import Annotated
 from pulse8_core_cli.backend_shared_lib.functions import (
     backend_shared_lib_create,
     backend_shared_lib_update,
+    backend_shared_lib_release,
 )
 
 app = typer.Typer()
@@ -51,3 +52,11 @@ def delete():
     Delete an existing backend shared lib
     """
     print(f"[WIP]...")
+
+
+@app.command()
+def release(version: str, title: str):
+    """
+    Create a GitHub release for an existing backend shared lib
+    """
+    backend_shared_lib_release(version, title)
