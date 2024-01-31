@@ -199,3 +199,5 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     os.system(f"gh pr create -t \"{pr_title}\" -F \"{tmp_body_file_path}\"")
     os.system("git fetch")
     os.remove(tmp_body_file_path)
+
+    print("[green]GitHub release PR was successfully created. You can merge it to create a release.[/green]")
