@@ -12,8 +12,6 @@ from uuid import uuid4
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_USER,
     ENV_GITHUB_TOKEN,
-    REPOSITORY_PRIVATE,
-    REPOSITORY_INTERNAL,
 )
 from pulse8_core_cli.shared.module import (
     get_env_variables,
@@ -39,7 +37,7 @@ def template_precheck():
 
 def create_template(
     template_repo_name: str,
-    create_remote_repo: str,
+    create_remote_repo: bool,
     answers_file: str,
     defaults: bool,
     skip_answered: bool,
@@ -51,20 +49,9 @@ def create_template(
     github_user = env_vars[ENV_GITHUB_USER]
 
     if create_remote_repo is None:
-        create_remote_input = typer.prompt(
-            "Do you want to create private or internal repository ? [no/private/internal]"
+        create_remote_repo = typer.confirm(
+            "Do you want to create private remote repository ?"
         )
-
-        if (
-            create_remote_input == REPOSITORY_PRIVATE
-            or create_remote_input == REPOSITORY_INTERNAL
-        ):
-            create_remote_repo = create_remote_input
-    elif (
-        create_remote_repo != REPOSITORY_PRIVATE
-        and create_remote_repo != REPOSITORY_INTERNAL
-    ):
-        create_remote_repo = None
 
     print("Pulling latest template data...")
 
