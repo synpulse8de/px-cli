@@ -71,6 +71,8 @@ def git_init():
     os.system("git add .")
     os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
     os.system("git branch -M main")
+    current_git_path = os.getcwd().replace("\\", "/")
+    os.system(f"git config --global --add safe.directory {current_git_path}")
 
 
 def git_create_remote(
