@@ -2,7 +2,11 @@ from typing import Annotated
 
 import typer
 
-from pulse8_core_cli.backend_fastapi.functions import backend_fastapi_update, backend_fastapi_create
+from pulse8_core_cli.backend_fastapi.functions import (
+    backend_fastapi_update,
+    backend_fastapi_create,
+    backend_fastapi_release,
+)
 
 app = typer.Typer()
 
@@ -16,21 +20,35 @@ def dev():
 
 
 @app.command()
-def create(answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
-           create_remote_repository: Annotated[str,
-           typer.Option(help="Create remote repository [options: no/private/internal]")] = None,
-           defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
-           skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = False):
+def create(
+    answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
+    create_remote_repository: Annotated[
+        bool,
+        typer.Option(help="Create private remote repository"),
+    ] = None,
+    defaults: Annotated[
+        bool, typer.Option(help="Use default answers and skip questions")
+    ] = False,
+    skip_answered: Annotated[
+        bool, typer.Option(help="Skip answered questions")
+    ] = False,
+):
     """
     Create a new backend
     """
-    backend_fastapi_create(create_remote_repository, answers_file, defaults, skip_answered)
+    backend_fastapi_create(
+        create_remote_repository, answers_file, defaults, skip_answered
+    )
 
 
 @app.command()
-def update(answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
-           defaults: Annotated[bool, typer.Option(help="Use default answers and skip questions")] = False,
-           skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = True):
+def update(
+    answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
+    defaults: Annotated[
+        bool, typer.Option(help="Use default answers and skip questions")
+    ] = False,
+    skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = True,
+):
     """
     Update an existing backend
     """
@@ -51,3 +69,11 @@ def deploy():
     Start the deployment workflow for an existing backend
     """
     print(f"[WIP]...")
+
+
+@app.command()
+def release(version: str, title: str):
+    """
+    Create a GitHub release for an existing backend
+    """
+    backend_fastapi_release(version, title)
