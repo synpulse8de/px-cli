@@ -154,6 +154,7 @@ def execute_shell_command(
     command_array: list[str],
     message_success: str = "",
     message_failure: str = "",
+    print_output: bool = True,
 ) -> str:
     """
     Execute a command and print the output.
@@ -165,9 +166,12 @@ def execute_shell_command(
     )
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
-        print(f"[bold red]{message_failure})[/bold red]")
+        if message_failure:
+            print(f"[bold red]{message_failure})[/bold red]")
         print(res[1].decode("utf8"))
         exit(1)
-    print(res[0].decode("utf8"))
-    print(f"[green]{message_success}[/green]")
+    if print_output:
+        print(res[0].decode("utf8"))
+    if message_success:
+        print(f"[green]{message_success}[/green]")
     return res[0].decode("utf8")
