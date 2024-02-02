@@ -10,6 +10,8 @@ import yaml
 from inquirer import Checkbox
 from rich import print
 
+from pulse8_core_cli.shared.module import execute_shell_command
+
 from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_INFRA,
     KEY_CHOICES_INFRA_POSTGRESQL,
@@ -172,6 +174,23 @@ def env_create(
     )
     os.remove(ghcr_dockerconfigjson_path)
     os.remove(jfrog_dockerconfigjson_path)
+
+    # Pulse8 helm charts repo
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "source",
+            "helm",
+            "pulse8-helm-charts-oci",
+            "--url=oci://synpulse.jfrog.io/pulse8-helm-charts",
+            "--secret-ref=synpulse-jfrog-docker-credential",
+            "--interval=15m",
+        ],
+        message_failure=f"failed installing pulse8-helm-charts-oci repository (synpulse.jfrog.io/pulse8-helm-charts) into environment (id: {identifier})",
+        message_success=f"installed pulse8-helm-charts-oci repository (synpulse.jfrog.io/pulse8-helm-charts) into environment (id: {identifier})",
+    )
+
     if from_env is not None:
         choices, services = get_choices_from_env(from_env)
         env_check_and_update_deps(choices)
