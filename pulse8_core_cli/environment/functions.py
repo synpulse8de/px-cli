@@ -69,39 +69,36 @@ def env_create(
 ):
     env_vars = get_env_variables(silent=True)
     stop_all_env()
+
+    # Create K3d Cluster
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
-    args = (
-        "k3d",
-        "cluster",
-        "create",
-        "-p80:80@loadbalancer",
-        "-p443:443@loadbalancer",
-        "--k3s-arg",
-        "--disable=traefik@server:0",
-        identifier,
+    execute_shell_command(
+        command_array=[
+            "k3d",
+            "cluster",
+            "create",
+            "-p80:80@loadbalancer",
+            "-p443:443@loadbalancer",
+            "--k3s-arg",
+            "--disable=traefik@server:0",
+            identifier,
+        ],
+        message_failure=f"failed starting environment (id: {identifier})",
+        message_success=f"started environment (id: {identifier})",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(f"[bold red]failed starting environment (id: {identifier})[/bold red]")
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(f"[green]started environment (id: {identifier})[/green]")
-    print(res[0].decode("utf8"))
+
+    # Install Flux
     print(f"installing flux into environment (id: {identifier})...")
-    args = ("flux", "install")
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]failed installing flux into environment (id: {identifier})[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(f"[green]installed flux into environment (id: {identifier})[/green]")
-    print(res[0].decode("utf8"))
+    execute_shell_command(
+        command_array=["flux", "install"],
+        message_failure=f"failed installing flux into environment (id: {identifier})",
+        message_success=f"installed flux into environment (id: {identifier}",
+    )
+
+    # Pull Secrets
     print(f"installing pull secrets into environment (id: {identifier})...")
-    # github container registry (ghcr)
+
+    # Pull Secrets - GitHub Container Registry (ghcr)
     ghcr_dockerconfigjson = dict()
     ghcr_dockerconfigjson["auths"] = dict()
     ghcr_dockerconfigjson["auths"]["ghcr.io"] = dict()
@@ -120,26 +117,22 @@ def env_create(
     ghcr_dockerconfigjson_path = "ghcr_dockerconfig.json"
     with open(ghcr_dockerconfigjson_path, "w") as ghcr_dockerconfigjson_file:
         ghcr_dockerconfigjson_file.write(ghcr_dockerconfigjson_json)
-    args = (
-        "kubectl",
-        "create",
-        "secret",
-        "generic",
-        "synpulse-ghcr-docker-credential",
-        f"--from-file=.dockerconfigjson={ghcr_dockerconfigjson_path}",
-        "--type=kubernetes.io/dockerconfigjson",
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "create",
+            "secret",
+            "generic",
+            "synpulse-ghcr-docker-credential",
+            f"--from-file=.dockerconfigjson={ghcr_dockerconfigjson_path}",
+            "--type=kubernetes.io/dockerconfigjson",
+        ],
+        message_failure=f"failed installing pull secrets (ghcr.io) into environment (id: {identifier})",
+        message_success=f"installed pull secrets (ghcr.io) into environment (id: {identifier})",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]failed installing pull secrets (ghcr.io) into environment (id: {identifier})"
-            f"[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    # jfrog container registry
+    os.remove(ghcr_dockerconfigjson_path)
+
+    # Pull Secrets - JFrog container registry
     jfrog_dockerconfigjson = dict()
     jfrog_dockerconfigjson["auths"] = dict()
     jfrog_dockerconfigjson["auths"]["synpulse.jfrog.io"] = dict()
@@ -150,29 +143,19 @@ def env_create(
     jfrog_dockerconfigjson_path = "jfrog_dockerconfig.json"
     with open(jfrog_dockerconfigjson_path, "w") as jfrog_dockerconfigjson_file:
         jfrog_dockerconfigjson_file.write(jfrog_dockerconfigjson_json)
-    args = (
-        "kubectl",
-        "create",
-        "secret",
-        "generic",
-        "synpulse-jfrog-docker-credential",
-        f"--from-file=.dockerconfigjson={jfrog_dockerconfigjson_path}",
-        "--type=kubernetes.io/dockerconfigjson",
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "create",
+            "secret",
+            "generic",
+            "synpulse-jfrog-docker-credential",
+            f"--from-file=.dockerconfigjson={jfrog_dockerconfigjson_path}",
+            "--type=kubernetes.io/dockerconfigjson",
+        ],
+        message_failure=f"failed installing pull secrets (synpulse.jfrog.io) into environment (id: {identifier})",
+        message_success=f"installed pull secrets (synpulse.jfrog.io) into environment (id: {identifier})",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]failed installing pull secrets (synpulse.jfrog.io) into environment (id: {identifier})"
-            f"[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(
-        f"[green]installed pull secrets (ghcr.io, synpulse.jfrog.io) into environment (id: {identifier})[/green]"
-    )
-    os.remove(ghcr_dockerconfigjson_path)
     os.remove(jfrog_dockerconfigjson_path)
 
     # Pulse8 helm charts repo
@@ -245,84 +228,126 @@ def env_install_ingress_nginx() -> None:
     print("Installing ingress-nginx using Flux...")
     key_path = get_certificates_dir_path().joinpath("key.pem")
     cert_path = get_certificates_dir_path().joinpath("cert.pem")
-    print("Installing default tls certificate...")
-    args = (
-        "kubectl",
-        "create",
-        "secret",
-        "tls",
-        "pulse8-localhost",
-        f"--key={str(key_path)}",
-        f"--cert={str(cert_path)}",
-        "--namespace=kube-system",
+    print("Installing certificates...")
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "create",
+            "secret",
+            "tls",
+            "pulse8-localhost",
+            f"--key={str(key_path)}",
+            f"--cert={str(cert_path)}",
+            "--namespace=kube-system",
+        ],
+        message_failure=f"failed to install default tls certificate",
+        message_success=f"installed default tls certificate",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(f"[bold red]Failed to install default tls certificate[/bold red]")
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(f"[green]Installed default tls certificate[/green]")
-    print("Installing default tls certificate into default namespace...")
-    args = (
-        "kubectl",
-        "create",
-        "secret",
-        "tls",
-        "pulse8-localhost",
-        f"--key={str(key_path)}",
-        f"--cert={str(cert_path)}",
-        "--namespace=default",
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "create",
+            "secret",
+            "tls",
+            "pulse8-localhost",
+            f"--key={str(key_path)}",
+            f"--cert={str(cert_path)}",
+            "--namespace=default",
+        ],
+        message_failure=f"failed to install default tls certificate into defeault namespace",
+        message_success=f"installed default tls certificate into defeault namespace",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]Failed to install default tls certificate into default namespace[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(f"[green]Installed default tls certificate into default namespace[/green]")
-    args = (
-        "flux",
-        "create",
-        "source",
-        "git",
-        "pulse8-core-env-ingress-nginx-repo",
-        "--url=https://github.com/synpulse-group/pulse8-core-env-ingress-nginx.git",
-        "--branch=main",
-        "--secret-ref=github-token",
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "source",
+            "git",
+            "pulse8-core-env-ingress-nginx-repo",
+            "--url=https://github.com/synpulse-group/pulse8-core-env-ingress-nginx.git",
+            "--branch=main",
+            "--secret-ref=github-token",
+        ],
+        message_failure=f"failed to install ingress-nginx git source using Flux",
+        message_success=f"installed ingress-nginx git source using Flux",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]Failed to install ingress-nginx git source using Flux[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(f"[green]Installed ingress-nginx git source using Flux[/green]")
-    args = (
-        "flux",
-        "create",
-        "kustomization",
-        "pulse8-core-env-ingress-nginx",
-        "--source=GitRepository/pulse8-core-env-ingress-nginx-repo",
-        "--interval=1m",
-        "--prune=true",
-        "--target-namespace=kube-system",
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "kustomization",
+            "pulse8-core-env-ingress-nginx",
+            "--source=GitRepository/pulse8-core-env-ingress-nginx-repo",
+            "--interval=1m",
+            "--prune=true",
+            "--target-namespace=kube-system",
+        ],
+        message_failure=f"failed to install ingress-nginx using Flux",
+        message_success=f"installed ingress-nginx using Flux",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(f"[bold red]Failed to install ingress-nginx using Flux[/bold red]")
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(f"[green]Installed ingress-nginx using Flux[/green]")
+
+
+def env_install_particular_choice(
+    choice_name, choice_identifier, github_repository
+) -> None:
+    # first install the Git Source
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "source",
+            "git",
+            f"{choice_identifier}-repo",
+            f"--url={github_repository}",
+            "--branch=main",
+            "--secret-ref=github-token",
+        ],
+        message_failure=f"failed to install {choice_name} git source using Flux",
+        message_success=f"installed {choice_name} git source using Flux",
+    )
+    # then install the application itself
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "kustomization",
+            choice_identifier,
+            f"--source=GitRepository/{choice_identifier}-repo",
+            "--interval=1m",
+            "--prune=true",
+            "--target-namespace=default",
+        ],
+        message_failure=f"failed to install {choice_name} using Flux",
+        message_success=f"installed {choice_name} using Flux",
+    )
+
+
+def env_delete_particular_choice(choice_name, choice_identifier):
+    # Delete the Git Source
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "delete",
+            "source",
+            "git",
+            f"{choice_identifier}-repo",
+            "-s",
+        ],
+        message_failure=f"failed to uninstall {choice_name} git source using Flux",
+        message_success=f"uninstalled {choice_name} git source",
+    )
+    # Delete the Kustomizaiton
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "delete",
+            "kustomization",
+            choice_identifier,
+            "-s",
+        ],
+        message_failure=f"failed to uninstall {choice_name} using Flux",
+        message_success=f"uninstalled {choice_name}",
+    )
 
 
 def env_install_choices(
@@ -332,297 +357,76 @@ def env_install_choices(
     github_token = env_vars[ENV_GITHUB_TOKEN]
     github_user = env_vars[ENV_GITHUB_USER]
     print("Installing GitHub token using Flux...")
-    args = (
-        "flux",
-        "create",
-        "secret",
-        "git",
-        "github-token",
-        "--url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git",
-        f"--username={github_user}",
-        f"--password={github_token}",
-        "--namespace=flux-system",
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "secret",
+            "git",
+            "github-token",
+            f"--url=https://github.com/synpulse-group",
+            f"--username={github_user}",
+            f"--password={github_token}",
+            "--namespace=flux-system",
+        ],
+        message_failure=f"failed to install GitHub token using Flux",
+        message_success=f"installed GitHub token using Flux",
     )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(f"[bold red]Failed to install GitHub token using Flux[/bold red]")
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(f"[green]Installed GitHub token using Flux[/green]")
+
     # install ingress-nginx
     env_install_ingress_nginx()
+
+    # install choices
     if KEY_CHOICES_INFRA in choices:
         infra = choices[KEY_CHOICES_INFRA]
         if KEY_CHOICES_INFRA_POSTGRESQL in infra:
             print("Installing PostgreSQL using Flux...")
-            args = (
-                "flux",
-                "create",
-                "source",
-                "git",
-                "pulse8-core-env-postgresql-repo",
-                "--url=https://github.com/synpulse-group/pulse8-core-env-postgresql.git",
-                "--branch=main",
-                "--secret-ref=github-token",
+            env_install_particular_choice(
+                choice_name="PostgreSQL",
+                choice_identifier="pulse8-core-env-postgresql",
+                github_repository="https://github.com/synpulse-group/pulse8-core-env-postgresql.git",
             )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]Failed to install PostgreSQL git source using Flux[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed PostgreSQL git source using Flux[/green]")
-            print(res[0].decode("utf8"))
-            args = (
-                "flux",
-                "create",
-                "kustomization",
-                "pulse8-core-env-postgresql",
-                "--source=GitRepository/pulse8-core-env-postgresql-repo",
-                "--interval=1m",
-                "--prune=true",
-                "--target-namespace=default",
-            )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(f"[bold red]Failed to install PostgreSQL using Flux[/bold red]")
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed PostgreSQL using Flux[/green]")
-            print(res[0].decode("utf8"))
+
         if KEY_CHOICES_INFRA_KAFKA in infra:
             print("Installing Kafka (Confluent for Kubernetes) using Flux...")
-            args = (
-                "flux",
-                "create",
-                "source",
-                "git",
-                "pulse8-core-env-kafka-repo",
-                "--url=https://github.com/synpulse-group/pulse8-core-env-kafka.git",
-                "--branch=main",
-                "--secret-ref=github-token",
+            env_install_particular_choice(
+                choice_name="Kafka (Confluent for Kubernetes)",
+                choice_identifier="pulse8-core-env-kafka",
+                github_repository="https://github.com/synpulse-group/pulse8-core-env-kafka.git",
             )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]Failed to install Kafka git source using Flux[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Kafka git source using Flux[/green]")
-            print(res[0].decode("utf8"))
-            args = (
-                "flux",
-                "create",
-                "kustomization",
-                "pulse8-core-env-kafka",
-                "--source=GitRepository/pulse8-core-env-kafka-repo",
-                "--interval=1m",
-                "--prune=true",
-                "--target-namespace=default",
-            )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]Failed to install Kafka (Confluent for Kubernetes) using Flux[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(
-                f"[green]Installed Kafka (Confluent for Kubernetes) using Flux[/green]"
-            )
-            print(res[0].decode("utf8"))
+
         if KEY_CHOICES_INFRA_REDIS in infra:
             print("Installing Redis using Flux...")
-            args = (
-                "flux",
-                "create",
-                "source",
-                "git",
-                "pulse8-core-env-redis-repo",
-                "--url=https://github.com/synpulse-group/pulse8-core-env-redis.git",
-                "--branch=main",
-                "--secret-ref=github-token",
+            env_install_particular_choice(
+                choice_name="Redis",
+                choice_identifier="pulse8-core-env-redis",
+                github_repository="https://github.com/synpulse-group/pulse8-core-env-redis.git",
             )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]Failed to install Redis git source using Flux[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Redis git source using Flux[/green]")
-            print(res[0].decode("utf8"))
-            args = (
-                "flux",
-                "create",
-                "kustomization",
-                "pulse8-core-env-redis",
-                "--source=GitRepository/pulse8-core-env-redis-repo",
-                "--interval=1m",
-                "--prune=true",
-                "--target-namespace=default",
-            )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Redis using Flux[/bold red]")
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Redis using Flux[/green]")
-            print(res[0].decode("utf8"))
+
         if KEY_CHOICES_INFRA_EXASOL in infra:
             print("Installing Exasol using Flux...")
-            args = (
-                "flux",
-                "create",
-                "source",
-                "git",
-                "pulse8-core-env-exasol-repo",
-                "--url=https://github.com/synpulse-group/pulse8-core-env-exasol.git",
-                "--branch=main",
-                "--secret-ref=github-token",
+            env_install_particular_choice(
+                choice_name="Exasol",
+                choice_identifier="pulse8-core-env-exasol",
+                github_repository="https://github.com/synpulse-group/pulse8-core-env-exasol.git",
             )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]Failed to install Exasol git source using Flux[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Exasol git source using Flux[/green]")
-            print(res[0].decode("utf8"))
-            args = (
-                "flux",
-                "create",
-                "kustomization",
-                "pulse8-core-env-exasol",
-                "--source=GitRepository/pulse8-core-env-exasol-repo",
-                "--interval=1m",
-                "--prune=true",
-                "--target-namespace=default",
-            )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Exasol using Flux[/bold red]")
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Exasol using Flux[/green]")
-            print(res[0].decode("utf8"))
+
         if KEY_CHOICES_INFRA_TEEDY in infra:
             print("Installing Teedy using Flux...")
-            args = (
-                "flux",
-                "create",
-                "source",
-                "git",
-                "pulse8-core-env-teedy-repo",
-                "--url=https://github.com/synpulse-group/pulse8-core-env-teedy.git",
-                "--branch=main",
-                "--secret-ref=github-token",
+            env_install_particular_choice(
+                choice_name="Teedy",
+                choice_identifier="pulse8-core-env-teedy",
+                github_repository="https://github.com/synpulse-group/pulse8-core-env-teedy.git",
             )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]Failed to install Teedy git source using Flux[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Teedy git source using Flux[/green]")
-            print(res[0].decode("utf8"))
-            args = (
-                "flux",
-                "create",
-                "kustomization",
-                "pulse8-core-env-teedy",
-                "--source=GitRepository/pulse8-core-env-teedy-repo",
-                "--interval=1m",
-                "--prune=true",
-                "--target-namespace=default",
-            )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Teedy using Flux[/bold red]")
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Teedy using Flux[/green]")
-            print(res[0].decode("utf8"))
+
         if KEY_CHOICES_INFRA_KEYCLOAK in infra:
             print("Installing Keycloak using Flux...")
-            args = (
-                "flux",
-                "create",
-                "source",
-                "git",
-                "pulse8-core-env-keycloak-repo",
-                "--url=https://github.com/synpulse-group/pulse8-core-env-keycloak.git",
-                "--branch=main",
-                "--secret-ref=github-token",
+            env_install_particular_choice(
+                choice_name="Keycloak",
+                choice_identifier="pulse8-core-env-keycloak",
+                github_repository="https://github.com/synpulse-group/pulse8-core-env-keycloak.git",
             )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]Failed to install Keycloak git source using Flux[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Keycloak git source using Flux[/green]")
-            print(res[0].decode("utf8"))
-            args = (
-                "flux",
-                "create",
-                "kustomization",
-                "pulse8-core-env-keycloak",
-                "--source=GitRepository/pulse8-core-env-keycloak-repo",
-                "--interval=1m",
-                "--prune=true",
-                "--target-namespace=default",
-            )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Keycloak using Flux[/bold red]")
-                print(res[1].decode("utf8"))
-                exit(1)
-            print(f"[green]Installed Keycloak using Flux[/green]")
-            print(res[0].decode("utf8"))
+
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -636,255 +440,61 @@ def env_install_choices(
                 and KEY_CHOICES_INFRA_POSTGRESQL in choices_infra_old
             ):
                 print("Uninstalling PostgreSQL using Flux...")
-                args = (
-                    "flux",
-                    "delete",
-                    "source",
-                    "git",
-                    "pulse8-core-env-postgresql-repo",
-                    "-s",
+                env_delete_particular_choice(
+                    choice_name="PostgreSQL",
+                    choice_identifier="pulse8-core-env-postgresql",
                 )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall PostgreSQL git source using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(res[0].decode("utf8"))
-                args = (
-                    "flux",
-                    "delete",
-                    "kustomization",
-                    "pulse8-core-env-postgresql",
-                    "-s",
-                )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall PostgreSQL using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(f"[green]Uninstalled PostgreSQL using Flux[/green]")
-                print(res[0].decode("utf8"))
+
             if (
                 KEY_CHOICES_INFRA_KAFKA not in choices_infra
                 and KEY_CHOICES_INFRA_KAFKA in choices_infra_old
             ):
                 print("Uninstalling Kafka (Confluent for Kubernetes) using Flux...")
-                args = (
-                    "flux",
-                    "delete",
-                    "source",
-                    "git",
-                    "pulse8-core-env-kafka-repo",
-                    "-s",
+                env_delete_particular_choice(
+                    choice_name="Kafka (Confluent for Kubernetes)",
+                    choice_identifier="pulse8-core-env-kafka",
                 )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Kafka (Confluent for Kubernetes) git source using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(res[0].decode("utf8"))
-                args = (
-                    "flux",
-                    "delete",
-                    "kustomization",
-                    "pulse8-core-env-kafka",
-                    "-s",
-                )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Kafka (Confluent for Kubernetes) using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(
-                    f"[green]Uninstalled Kafka (Confluent for Kubernetes) using Flux[/green]"
-                )
-                print(res[0].decode("utf8"))
+
             if (
                 KEY_CHOICES_INFRA_REDIS not in choices_infra
                 and KEY_CHOICES_INFRA_REDIS in choices_infra_old
             ):
                 print("Uninstalling Redis using Flux...")
-                args = (
-                    "flux",
-                    "delete",
-                    "source",
-                    "git",
-                    "pulse8-core-env-redis-repo",
-                    "-s",
+                env_delete_particular_choice(
+                    choice_name="Redis",
+                    choice_identifier="pulse8-core-env-redis",
                 )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Redis git source using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(res[0].decode("utf8"))
-                args = (
-                    "flux",
-                    "delete",
-                    "kustomization",
-                    "pulse8-core-env-redis",
-                    "-s",
-                )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Redis using Flux[/bold red]")
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(f"[green]Uninstalled Redis using Flux[/green]")
-                print(res[0].decode("utf8"))
+
             if (
                 KEY_CHOICES_INFRA_EXASOL not in choices_infra
                 and KEY_CHOICES_INFRA_EXASOL in choices_infra_old
             ):
                 print("Uninstalling Exasol using Flux...")
-                args = (
-                    "flux",
-                    "delete",
-                    "source",
-                    "git",
-                    "pulse8-core-env-exasol-repo",
-                    "-s",
+                env_delete_particular_choice(
+                    choice_name="Exasol",
+                    choice_identifier="pulse8-core-env-exasol",
                 )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Exasol git source using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(res[0].decode("utf8"))
-                args = (
-                    "flux",
-                    "delete",
-                    "kustomization",
-                    "pulse8-core-env-exasol",
-                    "-s",
-                )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Exasol using Flux[/bold red]")
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(f"[green]Uninstalled Exasol using Flux[/green]")
-                print(res[0].decode("utf8"))
+
             if (
                 KEY_CHOICES_INFRA_TEEDY not in choices_infra
                 and KEY_CHOICES_INFRA_TEEDY in choices_infra_old
             ):
                 print("Uninstalling Teedy using Flux...")
-                args = (
-                    "flux",
-                    "delete",
-                    "source",
-                    "git",
-                    "pulse8-core-env-teedy-repo",
-                    "-s",
+                env_delete_particular_choice(
+                    choice_name="Teedy",
+                    choice_identifier="pulse8-core-env-teedy",
                 )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Teedy git source using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(res[0].decode("utf8"))
-                args = (
-                    "flux",
-                    "delete",
-                    "kustomization",
-                    "pulse8-core-env-teedy",
-                    "-s",
-                )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Teedy using Flux[/bold red]")
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(f"[green]Uninstalled Teedy using Flux[/green]")
-                print(res[0].decode("utf8"))
+
             if (
                 KEY_CHOICES_INFRA_KEYCLOAK not in choices_infra
                 and KEY_CHOICES_INFRA_KEYCLOAK in choices_infra_old
             ):
                 print("Uninstalling Keycloak using Flux...")
-                args = (
-                    "flux",
-                    "delete",
-                    "source",
-                    "git",
-                    "pulse8-core-env-keycloak-repo",
-                    "-s",
+                env_delete_particular_choice(
+                    choice_name="Keycloak",
+                    choice_identifier="pulse8-core-env-keycloak",
                 )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Keycloak git source using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(res[0].decode("utf8"))
-                args = (
-                    "flux",
-                    "delete",
-                    "kustomization",
-                    "pulse8-core-env-keycloak",
-                    "-s",
-                )
-                pipe = subprocess.Popen(
-                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Keycloak using Flux[/bold red]"
-                    )
-                    print(res[1].decode("utf8"))
-                    exit(1)
-                print(f"[green]Uninstalled Keycloak using Flux[/green]")
-                print(res[0].decode("utf8"))
+
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
@@ -1100,75 +710,47 @@ def install_service(service_key: str, services=SERVICES) -> None:
         args = args + (f"--branch={services[service_key]['branch']}",)
     if services[service_key]["ref-name"] is not None:
         args = args + (f"--ref-name={services[service_key]['ref-name']}",)
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]Failed to install {services[service_key]['name']} ({service_key}) git source using Flux"
-            f"[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(
-        f"[green]Installed {services[service_key]['name']} ({service_key}) git source using Flux[/green]"
+
+    # Install the service's Git Source
+    execute_shell_command(
+        command_array=args,
+        message_failure=f"failed to install {services[service_key]['name']} ({service_key}) git source using Flux",
+        message_success=f"installed {services[service_key]['name']} ({service_key}) git source using Flux",
     )
-    args = (
-        "flux",
-        "create",
-        "kustomization",
-        f"{service_key}",
-        f"--source=GitRepository/{service_key}-repo",
-        "--interval=1m",
-        "--prune=true",
-        "--path=k8s",
-        "--target-namespace=default",
-        "--wait=false",
-        "--health-check-timeout=30s",
-    )
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]Failed to install {services[service_key]['name']} ({service_key}) using Flux"
-            f"[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(
-        f"[green]Installed {services[service_key]['name']} ({service_key}) using Flux[/green]"
+
+    # Create the kustomization itself
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "kustomization",
+            f"{service_key}",
+            f"--source=GitRepository/{service_key}-repo",
+            "--interval=1m",
+            "--prune=true",
+            "--path=k8s",
+            "--target-namespace=default",
+            "--wait=false",
+            "--health-check-timeout=30s",
+        ],
+        message_failure=f"failed to install {services[service_key]['name']} ({service_key}) using Flux",
+        message_success=f"installed {services[service_key]['name']} ({service_key}) using Flux",
     )
 
 
 def uninstall_service(service_key: str, services=SERVICES) -> None:
     print(f"Uninstalling {services[service_key]['name']} ({service_key}) using Flux...")
-    args = ("flux", "delete", "source", "git", f"{service_key}-repo", "-s")
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]Failed to uninstall {services[service_key]['name']} ({service_key}) git source using Flux"
-            f"[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(
-        f"[green]Uninstalled {services[service_key]['name']} ({service_key}) git source using Flux[/green]"
+    # Delete Git Source
+    execute_shell_command(
+        command_array=["flux", "delete", "source", "git", f"{service_key}-repo", "-s"],
+        message_failure=f"failed to uninstall {services[service_key]['name']} ({service_key}) git source using Flux",
+        message_success=f"uninstalled {services[service_key]['name']} ({service_key}) git source using Flux",
     )
-    args = ("flux", "delete", "kustomization", f"{service_key}", "-s")
-    pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res: tuple[bytes, bytes] = pipe.communicate()
-    if pipe.returncode == 1:
-        print(
-            f"[bold red]Failed to uninstall {services[service_key]['name']} ({service_key}) using Flux[/bold red]"
-        )
-        print(res[1].decode("utf8"))
-        exit(1)
-    print(res[0].decode("utf8"))
-    print(
-        f"[green]Uninstalled {services[service_key]['name']} ({service_key}) using Flux[/green]"
+    # Delete the Kustomization
+    execute_shell_command(
+        command_array=["flux", "delete", "kustomization", f"{service_key}", "-s"],
+        message_failure=f"failed to uninstall {services[service_key]['name']} ({service_key}) using Flux",
+        message_success=f"uninstalled {services[service_key]['name']} ({service_key}) using Flux",
     )
 
 
@@ -1194,26 +776,26 @@ def create_certificates() -> None:
         if pipe.returncode == 1:
             print(res[1].decode("utf8"))
             exit(1)
-        print(res[0].decode("utf8"))
-        args = (
-            "mkcert",
-            "-key-file",
-            key_path,
-            "-cert-file",
-            cert_path,
-            "pulse8.localhost",
-            "*.pulse8.localhost",
-            "localhost",
-            "127.0.0.1",
-            "::1",
+        execute_shell_command(
+            command_array=["mkcert", "--install"],
+            message_failure=f"failed to setup mkcert",
         )
-        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        res: tuple[bytes, bytes] = pipe.communicate()
-        if pipe.returncode == 1:
-            print(res[1].decode("utf8"))
-            exit(1)
-        print(res[0].decode("utf8"))
-        print("[green]certificates created[/green]")
+        execute_shell_command(
+            command_array=[
+                "mkcert",
+                "-key-file",
+                key_path,
+                "-cert-file",
+                cert_path,
+                "pulse8.localhost",
+                "*.pulse8.localhost",
+                "localhost",
+                "127.0.0.1",
+                "::1",
+            ],
+            message_failure=f"failed to create certificates",
+            message_success=f"certificates created",
+        )
 
 
 def store_env_setup(identifier: str, choices: dict, services=SERVICES) -> bool:
@@ -1236,23 +818,17 @@ def store_env_setup(identifier: str, choices: dict, services=SERVICES) -> bool:
         os.system(
             "kubectl delete configmap pulse8-core-cli-config --ignore-not-found=true"
         )
-        args = (
-            "kubectl",
-            "create",
-            "configmap",
-            "pulse8-core-cli-config",
-            f"--from-file={env_file_path}",
+        execute_shell_command(
+            command_array=[
+                "kubectl",
+                "create",
+                "configmap",
+                "pulse8-core-cli-config",
+                f"--from-file={env_file_path}",
+            ],
+            message_failure=f"failed to save into configmap pulse8-core-cli-config",
+            message_success=f"saved choices into configmap pulse8-core-cli-config",
         )
-        pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        res: tuple[bytes, bytes] = pipe.communicate()
-        if pipe.returncode == 1:
-            print(
-                f"[bold red]failed to save into configmap pulse8-core-cli-config[/bold red]"
-            )
-            print(res[1].decode("utf8"))
-            exit(1)
-        print(f"[green]saved choices into configmap pulse8-core-cli-config[/green]")
-        print(res[0].decode("utf8"))
         print(
             f"[italic]Hint: You can edit your environment setup using the configmap pulse8-core-cli-config.[/italic]"
         )
@@ -1273,27 +849,20 @@ def read_env_setup(identifier: str, file_only: bool = False) -> (dict, dict | No
             env_setup_raw = env_file.read()
             env_setup_fs = yaml.load(env_setup_raw, yaml.Loader)
         if not file_only:
-            args = (
-                "kubectl",
-                "--namespace",
-                "default",
-                "get",
-                "configmap",
-                "pulse8-core-cli-config",
-                "-o",
-                "yaml",
+            configmap_raw = execute_shell_command(
+                command_array=[
+                    "kubectl",
+                    "--namespace",
+                    "default",
+                    "get",
+                    "configmap",
+                    "pulse8-core-cli-config",
+                    "-o",
+                    "yaml",
+                ],
+                message_failure=f"failed collecting information - previous configuration from configmap",
+                message_success=f"successfully loaded previous configuration from configmap",
             )
-            pipe = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(
-                    f"[bold red]failed collecting information - previous configuration from configmap[/bold red]"
-                )
-                print(res[1].decode("utf8"))
-                exit(1)
-            configmap_raw = res[0].decode("utf8")
             configmap = yaml.load(configmap_raw, yaml.Loader)
             env_setup_configmap = yaml.load(
                 configmap["data"][f"{identifier}.yaml"], yaml.Loader
