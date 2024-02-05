@@ -3,7 +3,11 @@ from typing import Annotated
 import typer
 
 from rich import print
-from pulse8_core_cli.frontend.functions import frontend_create, frontend_update, frontend_release
+from pulse8_core_cli.frontend.functions import (
+    frontend_create,
+    frontend_update,
+    frontend_release,
+)
 
 app = typer.Typer()
 

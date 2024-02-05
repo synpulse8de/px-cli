@@ -81,9 +81,7 @@ def git_create_remote(
     create_remote_repo: bool, repository_name: str, github_user: str, github_token: str
 ):
     if create_remote_repo:
-        print(
-            f"[green]Creating private remote repository {repository_name}[/green]"
-        )
+        print(f"[green]Creating private remote repository {repository_name}[/green]")
 
         os.system(
             f"gh repo create {repository_name} --private --source=. --remote=upstream"

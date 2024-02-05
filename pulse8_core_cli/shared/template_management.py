@@ -74,7 +74,9 @@ def create_template(
     git_create_remote(create_remote_repo, project_id, github_user, github_token)
 
 
-def update_template(answers_file: str, defaults: bool, skip_answered: bool, callback_after_update=None):
+def update_template(
+    answers_file: str, defaults: bool, skip_answered: bool, callback_after_update=None
+):
     template_precheck()
 
     print("Pulling latest template data...")
@@ -95,7 +97,6 @@ def update_template(answers_file: str, defaults: bool, skip_answered: bool, call
 
 
 def release_template(version: str, title: str, callback_before_git_commit=None):
-
     unreleased_header = "##[unreleased]"
     unreleased_header_idx = -1
 
@@ -112,16 +113,23 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
 
     remote_git_url = None
     try:
-        remote_git_url = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).strip().decode()
-        remote_git_url = remote_git_url.replace("git@github.com:", "https://github.com/").replace(".git", "/")
+        remote_git_url = (
+            subprocess.check_output(["git", "config", "--get", "remote.origin.url"])
+            .strip()
+            .decode()
+        )
+        remote_git_url = remote_git_url.replace(
+            "git@github.com:", "https://github.com/"
+        ).replace(".git", "/")
     except Exception:
-        print("[bold][red]Failed to obtain remote git URL. Release cannot be performed without git remote.[/red][/bold]")
+        print(
+            "[bold][red]Failed to obtain remote git URL. Release cannot be performed without git remote.[/red][/bold]"
+        )
         exit(1)
 
     with open(f"{Path.cwd()}/CHANGELOG.md", "r", encoding="utf-8") as changelog:
         lines = changelog.readlines()
         for line in lines:
-
             line_idx += 1
             line_compare = line.lower().replace(" ", "")
 
@@ -133,10 +141,18 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
                 else:
                     line_ending = "\n"
 
-            if latest_header_idx == -1 and unreleased_header_idx != -1 and line_compare.startswith("##["):
+            if (
+                latest_header_idx == -1
+                and unreleased_header_idx != -1
+                and line_compare.startswith("##[")
+            ):
                 latest_header_idx = line_idx
                 unreleased_notes_end_idx = line_idx
-                latest_header_version = re.findall(r'\[.*?\]', line_compare)[0].replace("[", "").replace("]", "")
+                latest_header_version = (
+                    re.findall(r"\[.*?\]", line_compare)[0]
+                    .replace("[", "")
+                    .replace("]", "")
+                )
 
             if line_compare.startswith(unreleased_header):
                 unreleased_header_idx = line_idx
@@ -147,8 +163,11 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
 
     pr_body = ""
     for idx, line in enumerate(lines):
-        if (unreleased_header_idx != -1 and unreleased_notes_end_idx != -1
-                and unreleased_header_idx < idx < unreleased_notes_end_idx):
+        if (
+            unreleased_header_idx != -1
+            and unreleased_notes_end_idx != -1
+            and unreleased_header_idx < idx < unreleased_notes_end_idx
+        ):
             pr_body += line
     pr_body = pr_body.strip()
 
@@ -157,12 +176,20 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     lines.insert(unreleased_header_idx + 1, line_ending)
     lines.insert(unreleased_header_idx + 2, f"## [{version}] - {today}{line_ending}")
 
-    lines[unreleased_link_idx + 2] = f"[Unreleased]: {remote_git_url}compare/v{version}...HEAD{line_ending}"
+    lines[
+        unreleased_link_idx + 2
+    ] = f"[Unreleased]: {remote_git_url}compare/v{version}...HEAD{line_ending}"
 
     if latest_header_idx == -1:
-        lines.insert(unreleased_link_idx + 3, f"[{version}]: {remote_git_url}releases/tag/v{version}{line_ending}")
+        lines.insert(
+            unreleased_link_idx + 3,
+            f"[{version}]: {remote_git_url}releases/tag/v{version}{line_ending}",
+        )
     else:
-        lines.insert(unreleased_link_idx + 3, f"[{version}]: {remote_git_url}compare/v{latest_header_version}...v{version}{line_ending}")
+        lines.insert(
+            unreleased_link_idx + 3,
+            f"[{version}]: {remote_git_url}compare/v{latest_header_version}...v{version}{line_ending}",
+        )
 
     with open(f"{Path.cwd()}/CHANGELOG.md", "w", encoding="utf-8") as changelog:
         changelog.truncate(0)
@@ -176,15 +203,17 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     tmp_body_file_name = f"pr_body_{str(uuid4())}.txt"
     tmp_body_file_path = Path.home().joinpath(".pulse8").joinpath(tmp_body_file_name)
 
-    with open(tmp_body_file_path, 'w', encoding="utf-8") as pr_body_file:
+    with open(tmp_body_file_path, "w", encoding="utf-8") as pr_body_file:
         pr_body_file.write(pr_body)
 
     os.system("git add -u :/")
     os.system(f"git checkout -b release/v{version}")
-    os.system(f"git commit -m \"{pr_title}\"")
+    os.system(f'git commit -m "{pr_title}"')
     os.system(f"git push -u origin release/v{version}")
-    os.system(f"gh pr create -t \"{pr_title}\" -F \"{tmp_body_file_path}\"")
+    os.system(f'gh pr create -t "{pr_title}" -F "{tmp_body_file_path}"')
     os.system("git fetch")
     os.remove(tmp_body_file_path)
 
-    print("[green]GitHub release PR was successfully created. You can merge it to create a release.[/green]")
+    print(
+        "[green]GitHub release PR was successfully created. You can merge it to create a release.[/green]"
+    )

@@ -1,7 +1,11 @@
 import os
 
 from pulse8_core_cli.shared.constants import TEMPLATE_REPO_BACKEND_FASTAPI
-from pulse8_core_cli.shared.template_management import create_template, update_template, release_template
+from pulse8_core_cli.shared.template_management import (
+    create_template,
+    update_template,
+    release_template,
+)
 
 
 def backend_fastapi_create(
