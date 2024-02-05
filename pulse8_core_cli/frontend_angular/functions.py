@@ -7,7 +7,7 @@ from pulse8_core_cli.shared.template_management import create_template, update_t
 def frontend_angular_create(
     create_remote_repo: bool, answers_file: str, defaults: bool, skip_answered: bool
 ):
-    def callback_before_git_init():
+    def callback_after_git_init():
         os.system("pnpm install")
         # os.system("husky install")
 
@@ -17,7 +17,7 @@ def frontend_angular_create(
         answers_file,
         defaults,
         skip_answered,
-        callback_before_git_init,
+        callback_after_git_init,
     )
 
 

@@ -66,8 +66,10 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         exit(1)
 
 
-def git_init():
+def git_init(callback_after_git_init):
     os.system("git init")
+    if callback_after_git_init is not None:
+        callback_after_git_init()
     os.system("git add .")
     os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
     os.system("git branch -M main")

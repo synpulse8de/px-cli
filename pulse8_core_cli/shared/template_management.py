@@ -41,7 +41,7 @@ def create_template(
     answers_file: str,
     defaults: bool,
     skip_answered: bool,
-    callback_before_git_init=None,
+    callback_after_git_init=None,
 ):
     template_precheck()
     env_vars = get_env_variables(silent=True)
@@ -70,14 +70,11 @@ def create_template(
 
     rename_template_tmp_dir(tmp_dir, project_id)
 
-    if callback_before_git_init is not None:
-        callback_before_git_init()
-
-    git_init()
+    git_init(callback_after_git_init)
     git_create_remote(create_remote_repo, project_id, github_user, github_token)
 
 
-def update_template(answers_file: str, defaults: bool, skip_answered: bool):
+def update_template(answers_file: str, defaults: bool, skip_answered: bool, callback_after_update=None):
     template_precheck()
 
     print("Pulling latest template data...")
@@ -90,6 +87,9 @@ def update_template(answers_file: str, defaults: bool, skip_answered: bool):
         answers_file=answers_file,
         skip_answered=skip_answered,
     )
+
+    if callback_after_update is not None:
+        callback_after_update()
 
     print("[green]Project successfully updated.[/green]")
 
