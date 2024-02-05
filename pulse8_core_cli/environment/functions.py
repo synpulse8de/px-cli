@@ -10,6 +10,8 @@ import yaml
 from inquirer import Checkbox
 from rich import print
 
+from pulse8_core_cli.shared.module import execute_shell_command
+
 from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_INFRA,
     KEY_CHOICES_INFRA_POSTGRESQL,
@@ -168,10 +170,27 @@ def env_create(
         exit(1)
     print(res[0].decode("utf8"))
     print(
-        f"[green]installed pull secrets (ghcr.io, synpulse.jfrog.io) into environment (id: {identifier})[/green]\n"
+        f"[green]installed pull secrets (ghcr.io, synpulse.jfrog.io) into environment (id: {identifier})[/green]"
     )
     os.remove(ghcr_dockerconfigjson_path)
     os.remove(jfrog_dockerconfigjson_path)
+
+    # Pulse8 helm charts repo
+    execute_shell_command(
+        command_array=[
+            "flux",
+            "create",
+            "source",
+            "helm",
+            "pulse8-helm-charts-oci",
+            "--url=oci://synpulse.jfrog.io/pulse8-helm-charts",
+            "--secret-ref=synpulse-jfrog-docker-credential",
+            "--interval=15m",
+        ],
+        message_failure=f"failed installing pulse8-helm-charts-oci repository (synpulse.jfrog.io/pulse8-helm-charts) into environment (id: {identifier})",
+        message_success=f"installed pulse8-helm-charts-oci repository (synpulse.jfrog.io/pulse8-helm-charts) into environment (id: {identifier})",
+    )
+
     if from_env is not None:
         choices, services = get_choices_from_env(from_env)
         env_check_and_update_deps(choices)
@@ -200,7 +219,7 @@ def env_update():
     identifier = re.sub(r"\s", "", identifier)
     (choices_fs, choices_configmap) = read_env_setup(identifier)
     print(f"[green]collected information about current context[/green]")
-    print(f"[bold]updating environment (id: {identifier})...[/bold]\n")
+    print(f"[bold]updating environment (id: {identifier})...[/bold]")
     (preselection_infra, preselection_services) = get_preselection_from_setup(
         choices_configmap
     )
@@ -226,7 +245,7 @@ def env_install_ingress_nginx() -> None:
     print("Installing ingress-nginx using Flux...")
     key_path = get_certificates_dir_path().joinpath("key.pem")
     cert_path = get_certificates_dir_path().joinpath("cert.pem")
-    print("Installing default tls certificate")
+    print("Installing default tls certificate...")
     args = (
         "kubectl",
         "create",
@@ -245,8 +264,7 @@ def env_install_ingress_nginx() -> None:
         exit(1)
     print(res[0].decode("utf8"))
     print(f"[green]Installed default tls certificate[/green]")
-    print("\n")
-    print("Installing default tls certificate into default namespace")
+    print("Installing default tls certificate into default namespace...")
     args = (
         "kubectl",
         "create",
@@ -267,7 +285,6 @@ def env_install_ingress_nginx() -> None:
         exit(1)
     print(res[0].decode("utf8"))
     print(f"[green]Installed default tls certificate into default namespace[/green]")
-    print("\n")
     args = (
         "flux",
         "create",
@@ -306,7 +323,6 @@ def env_install_ingress_nginx() -> None:
         exit(1)
     print(res[0].decode("utf8"))
     print(f"[green]Installed ingress-nginx using Flux[/green]")
-    print("\n")
 
 
 def env_install_choices(
@@ -335,7 +351,6 @@ def env_install_choices(
         exit(1)
     print(res[0].decode("utf8"))
     print(f"[green]Installed GitHub token using Flux[/green]")
-    print("\n")
     # install ingress-nginx
     env_install_ingress_nginx()
     if KEY_CHOICES_INFRA in choices:
