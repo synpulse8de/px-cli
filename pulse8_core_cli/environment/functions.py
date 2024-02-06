@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import inquirer
 import yaml
 from inquirer import Checkbox
 from rich import print
+
 
 from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_INFRA,
@@ -27,7 +29,7 @@ from pulse8_core_cli.environment.constants import (
     SERVICES_DEPENDENCIES_SERVICES,
     KEY_CHOICES_INFRA_KEYCLOAK,
     INFRA_DEPENDENCIES_INFRA,
-    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT, KEY_CHOICES_INFRA_SPARK, KEY_CHOICES_INFRA_MINIO,
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT, KEY_CHOICES_INFRA_SPARK,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -67,6 +69,13 @@ def env_create(
 ):
     env_vars = get_env_variables(silent=True)
     stop_all_env()
+    print(f"preparing environment (id: {identifier})...")
+    env_volume_dir: Path = Path(f"{Path.home()}/.pulse8/volumes/{identifier}")
+    env_volume_dir.mkdir(parents=True, exist_ok=True)
+    var_lib_kubelet_pods_dir = Path(f"{env_volume_dir}/var/lib/kubelet/pods")
+    var_lib_kubelet_pods_dir.mkdir(parents=True, exist_ok=True)
+    var_lib_rancher_k3s_storage_dir = Path(f"{env_volume_dir}/var/lib/rancher/k3s/storage")
+    var_lib_rancher_k3s_storage_dir.mkdir(parents=True, exist_ok=True)
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
     args = (
         "k3d",
@@ -76,6 +85,8 @@ def env_create(
         "-p443:443@loadbalancer",
         "--k3s-arg",
         "--disable=traefik@server:0",
+        f"-v{var_lib_kubelet_pods_dir}:/var/lib/kubelet/pods:shared@all",
+        f"-v{var_lib_rancher_k3s_storage_dir}:/var/lib/rancher/k3s/storage:shared@all",
         identifier,
     )
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -632,30 +643,30 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Apache Spark using Flux[/green]")
             print(res[0].decode('utf8'))
-        if KEY_CHOICES_INFRA_MINIO in infra:
-            print("Installing MinIO using Flux...")
-            args = ("flux", "create", "source", "git", "pulse8-core-env-minio-repo",
-                    "--url=https://github.com/synpulse-group/pulse8-core-env-minio.git", "--branch=main",
-                    "--secret-ref=github-token")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(f"[bold red]Failed to install MinIO git source using Flux[/bold red]")
-                print(res[1].decode('utf8'))
-                exit(1)
-            print(f"[green]Installed MinIO git source using Flux[/green]")
-            print(res[0].decode('utf8'))
-            args = ("flux", "create", "kustomization", "pulse8-core-env-minio",
-                    "--source=GitRepository/pulse8-core-env-minio-repo", "--interval=1m", "--prune=true",
-                    "--target-namespace=default")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            res: tuple[bytes, bytes] = pipe.communicate()
-            if pipe.returncode == 1:
-                print(f"[bold red]Failed to install MinIO using Flux[/bold red]")
-                print(res[1].decode('utf8'))
-                exit(1)
-            print(f"[green]Installed MinIO using Flux[/green]")
-            print(res[0].decode('utf8'))
+        # if KEY_CHOICES_INFRA_HDFS in infra:
+        #     print("Installing HDFS using Flux...")
+        #     args = ("flux", "create", "source", "git", "pulse8-core-env-hdfs-repo",
+        #             "--url=https://github.com/synpulse-group/pulse8-core-env-hdfs.git", "--branch=main",
+        #             "--secret-ref=github-token")
+        #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #     res: tuple[bytes, bytes] = pipe.communicate()
+        #     if pipe.returncode == 1:
+        #         print(f"[bold red]Failed to install HDFS git source using Flux[/bold red]")
+        #         print(res[1].decode('utf8'))
+        #         exit(1)
+        #     print(f"[green]Installed HDFS git source using Flux[/green]")
+        #     print(res[0].decode('utf8'))
+        #     args = ("flux", "create", "kustomization", "pulse8-core-env-hdfs",
+        #             "--source=GitRepository/pulse8-core-env-hdfs-repo", "--interval=1m", "--prune=true",
+        #             "--target-namespace=default")
+        #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #     res: tuple[bytes, bytes] = pipe.communicate()
+        #     if pipe.returncode == 1:
+        #         print(f"[bold red]Failed to install HDFS using Flux[/bold red]")
+        #         print(res[1].decode('utf8'))
+        #         exit(1)
+        #     print(f"[green]Installed HDFS using Flux[/green]")
+        #     print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -937,25 +948,25 @@ def env_install_choices(
                     exit(1)
                 print(f"[green]Uninstalled Apache Spark using Flux[/green]")
                 print(res[0].decode('utf8'))
-            if KEY_CHOICES_INFRA_MINIO not in choices_infra and KEY_CHOICES_INFRA_MINIO in choices_infra_old:
-                print("Uninstalling MinIO using Flux...")
-                args = ("flux", "delete", "source", "git", "pulse8-core-env-minio-repo", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall MinIO git source using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
-                    exit(1)
-                print(res[0].decode('utf8'))
-                args = ("flux", "delete", "kustomization", "pulse8-core-env-minio", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                res: tuple[bytes, bytes] = pipe.communicate()
-                if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall MinIO using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
-                    exit(1)
-                print(f"[green]Uninstalled MinIO using Flux[/green]")
-                print(res[0].decode('utf8'))
+            # if KEY_CHOICES_INFRA_HDFS not in choices_infra and KEY_CHOICES_INFRA_HDFS in choices_infra_old:
+            #     print("Uninstalling HDFS using Flux...")
+            #     args = ("flux", "delete", "source", "git", "pulse8-core-env-hdfs-repo", "-s")
+            #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #     res: tuple[bytes, bytes] = pipe.communicate()
+            #     if pipe.returncode == 1:
+            #         print(f"[bold red]Failed to uninstall HDFS git source using Flux[/bold red]")
+            #         print(res[1].decode('utf8'))
+            #         exit(1)
+            #     print(res[0].decode('utf8'))
+            #     args = ("flux", "delete", "kustomization", "pulse8-core-env-hdfs", "-s")
+            #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #     res: tuple[bytes, bytes] = pipe.communicate()
+            #     if pipe.returncode == 1:
+            #         print(f"[bold red]Failed to uninstall HDFS using Flux[/bold red]")
+            #         print(res[1].decode('utf8'))
+            #         exit(1)
+            #     print(f"[green]Uninstalled HDFS using Flux[/green]")
+            #     print(res[0].decode('utf8'))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
@@ -1020,7 +1031,7 @@ def get_questions(
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
-            ("MinIO", KEY_CHOICES_INFRA_MINIO),
+            # ("HDFS", KEY_CHOICES_INFRA_HDFS),
         ]
     else:
         choices_infra = [
@@ -1031,7 +1042,7 @@ def get_questions(
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
-            ("MinIO", KEY_CHOICES_INFRA_MINIO),
+            # ("HDFS", KEY_CHOICES_INFRA_HDFS),
         ]
     questions = [
         inquirer.Checkbox(
@@ -1104,8 +1115,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_KEYCLOAK)
             if KEY_CHOICES_INFRA_SPARK in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_SPARK)
-            if KEY_CHOICES_INFRA_MINIO in choices_infra:
-                preselection_infra.append(KEY_CHOICES_INFRA_MINIO)
+            # if KEY_CHOICES_INFRA_HDFS in choices_infra:
+            #     preselection_infra.append(KEY_CHOICES_INFRA_HDFS)
         if KEY_CHOICES_SERVICES in setup:
             choices_services = setup[KEY_CHOICES_SERVICES]
             if (
@@ -1401,9 +1412,12 @@ def delete_env_setup(identifier: str) -> bool:
     try:
         env_file_path = get_environments_dir_path().joinpath(f"{identifier}.yaml")
         os.remove(env_file_path)
+        env_volume_dir: Path = Path(f"{Path.home()}/.pulse8/volumes/{identifier}")
+        shutil.rmtree(env_volume_dir)
         print(f"Removed environment setup ({identifier})")
         return True
-    except (OSError, FileNotFoundError):
+    except (OSError, FileNotFoundError) as e:
+        print(e)
         print(f"[red]Failed to remove environment setup ({identifier})[/red]")
         return False
 
