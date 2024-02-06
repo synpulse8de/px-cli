@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import subprocess
 
 from pathlib import Path
 from uuid import uuid4
@@ -79,9 +80,7 @@ def git_create_remote(
     create_remote_repo: bool, repository_name: str, github_user: str, github_token: str
 ):
     if create_remote_repo:
-        print(
-            f"[green]Creating private remote repository {repository_name}[/green]"
-        )
+        print(f"[green]Creating private remote repository {repository_name}[/green]")
 
         os.system(
             f"gh repo create {repository_name} --private --source=. --remote=upstream"
@@ -149,3 +148,30 @@ def get_maven_wrapper_executable():
         return "mvnw.cmd"
     else:
         return "./mvnw"
+
+
+def execute_shell_command(
+    command_array: list[str],
+    message_success: str = "",
+    message_failure: str = "",
+    print_output: bool = True,
+) -> str:
+    """
+    Execute a command and print the output.
+    If the command fails, print the error message and exit with error code 1.
+    """
+
+    pipe = subprocess.Popen(
+        command_array, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        if message_failure:
+            print(f"[bold red]{message_failure})[/bold red]")
+        print(res[1].decode("utf8"))
+        exit(1)
+    if print_output:
+        print(res[0].decode("utf8"))
+    if message_success:
+        print(f"[green]{message_success}[/green]")
+    return res[0].decode("utf8")
