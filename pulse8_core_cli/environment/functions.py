@@ -656,30 +656,6 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Apache Spark using Flux[/green]")
             print(res[0].decode('utf8'))
-        # if KEY_CHOICES_INFRA_HDFS in infra:
-        #     print("Installing HDFS using Flux...")
-        #     args = ("flux", "create", "source", "git", "pulse8-core-env-hdfs-repo",
-        #             "--url=https://github.com/synpulse-group/pulse8-core-env-hdfs.git", "--branch=main",
-        #             "--secret-ref=github-token")
-        #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        #     res: tuple[bytes, bytes] = pipe.communicate()
-        #     if pipe.returncode == 1:
-        #         print(f"[bold red]Failed to install HDFS git source using Flux[/bold red]")
-        #         print(res[1].decode('utf8'))
-        #         exit(1)
-        #     print(f"[green]Installed HDFS git source using Flux[/green]")
-        #     print(res[0].decode('utf8'))
-        #     args = ("flux", "create", "kustomization", "pulse8-core-env-hdfs",
-        #             "--source=GitRepository/pulse8-core-env-hdfs-repo", "--interval=1m", "--prune=true",
-        #             "--target-namespace=default")
-        #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        #     res: tuple[bytes, bytes] = pipe.communicate()
-        #     if pipe.returncode == 1:
-        #         print(f"[bold red]Failed to install HDFS using Flux[/bold red]")
-        #         print(res[1].decode('utf8'))
-        #         exit(1)
-        #     print(f"[green]Installed HDFS using Flux[/green]")
-        #     print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -961,25 +937,6 @@ def env_install_choices(
                     exit(1)
                 print(f"[green]Uninstalled Apache Spark using Flux[/green]")
                 print(res[0].decode('utf8'))
-            # if KEY_CHOICES_INFRA_HDFS not in choices_infra and KEY_CHOICES_INFRA_HDFS in choices_infra_old:
-            #     print("Uninstalling HDFS using Flux...")
-            #     args = ("flux", "delete", "source", "git", "pulse8-core-env-hdfs-repo", "-s")
-            #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #     res: tuple[bytes, bytes] = pipe.communicate()
-            #     if pipe.returncode == 1:
-            #         print(f"[bold red]Failed to uninstall HDFS git source using Flux[/bold red]")
-            #         print(res[1].decode('utf8'))
-            #         exit(1)
-            #     print(res[0].decode('utf8'))
-            #     args = ("flux", "delete", "kustomization", "pulse8-core-env-hdfs", "-s")
-            #     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #     res: tuple[bytes, bytes] = pipe.communicate()
-            #     if pipe.returncode == 1:
-            #         print(f"[bold red]Failed to uninstall HDFS using Flux[/bold red]")
-            #         print(res[1].decode('utf8'))
-            #         exit(1)
-            #     print(f"[green]Uninstalled HDFS using Flux[/green]")
-            #     print(res[0].decode('utf8'))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
