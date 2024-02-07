@@ -16,7 +16,6 @@ def get_deployments_repo_directory() -> Path:
     """
     directory = Path.home().joinpath(f".pulse8/deployments/{GIT_REPO_NAME}")
     directory.mkdir(parents=True, exist_ok=True)
-    print(directory)
     return directory
 
 
