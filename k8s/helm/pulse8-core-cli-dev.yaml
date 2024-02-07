@@ -1,0 +1,62 @@
+# NOTICE: The file controlling your deployment is stored in the pulse8-app-deployments repository
+# You must make changes there, or alternatively update this file and use `pulse8 deploy submit`
+# to push an updated version to the deployments repository.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps-pulse8-core-cli-dev
+  labels:
+    synpulse8.com/env: dev
+    istio-injection: enabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: pulse8-core-cli
+  namespace: apps-pulse8-core-cli-dev
+spec:
+  interval: 1h # Any change to values triggers recon, this is just for periodic recon only
+  targetNamespace: apps-pulse8-core-cli-dev
+  install:
+    disableWait: true # this is to prevent the helm release from waiting for the pods to be ready
+    remediation:
+      retries: 0 # retry indefinitely in case of failure
+  chart:
+    spec:
+      chart: pulse8-microservice
+      version: "0.1.*"
+      sourceRef:
+        name: pulse8-helm-charts-oci
+        namespace: flux-system
+        kind: HelmRepository
+  values:
+    nameOverride: pulse8-core-cli
+    envName: dev
+    automation:
+      enabled: true
+      filePath:  # must point to a folder containing this file
+    image:
+      repository: synpulse.jfrog.io/s8-docker-local/synpulse-group-pulse8-core-cli-develop
+      tag: "0000000000" # {"$imagepolicy": "apps-pulse8-core-cli-dev:pulse8-core-cli:tag"}
+      pullSecret:
+        name: synpulse-jfrog-docker-credential
+        create: true
+    service:
+      ports:
+        - name: primary-port
+          internalPort: 8000 # what port does your container expose?
+    ingress:
+      enabled: true
+      hosts:
+        - host: dev.pulse8-core-cli.aws.synpulse8.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: pulse8-core-cli-tls # this will be created dynamically, its name doesn't matter
+          hosts:
+            - dev.pulse8-core-cli.aws.synpulse8.com # must match your host definition above
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi

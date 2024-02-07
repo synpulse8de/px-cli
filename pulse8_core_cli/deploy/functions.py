@@ -16,6 +16,7 @@ def get_deployments_repo_directory() -> Path:
     """
     directory = Path.home().joinpath(f".pulse8/deployments/{GIT_REPO_NAME}")
     directory.mkdir(parents=True, exist_ok=True)
+    print(directory)
     return directory
 
 
@@ -25,22 +26,25 @@ def get_deployments_git_repo() -> str:
     """
     return f"{GIT_REPO_ORG}/{GIT_REPO_NAME}"
 
-def get_updated_local_clone_of_repo(target_dir:str, repo_name:str, branch_name="main") -> int:
+
+def get_updated_local_clone_of_repo(
+    target_dir: str, repo_name: str, branch_name="main"
+) -> int:
     print(
         "[bold deep_sky_blue1]Initializing local clone of deployments GitOps repo... [/bold deep_sky_blue1]",
         end="",
     )
-    
     pipe = subprocess.Popen(
-        f"git checkout {branch_name} && git pull || git clone https://github.com/{repo_name}".split(" "),
+        f"git switch {branch_name} && git pull || git clone https://github.com/{repo_name}",
+        shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=target_dir,
     )
     _, stderr = pipe.communicate()
-    if pipe.returncode == 0:
+    if pipe.returncode != 0:
         print(f"[bold red]failed to update repo.[/bold red]")
-        print(stderr.decode('utf8'))
+        print(stderr.decode("utf8"))
         exit(1)
     print("[bold green]done.[/bold green]")
     return pipe.returncode
