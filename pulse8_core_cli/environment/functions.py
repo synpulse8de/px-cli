@@ -99,6 +99,70 @@ def env_create(
         exit(1)
     print(f"[green]started environment (id: {identifier})[/green]")
     print(res[0].decode("utf8"))
+    print(f"[bold]starting post creation steps for environment (id: {identifier})...[/bold]")
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "rollout",
+            "status",
+            "deployment",
+            "coredns"
+        ],
+        message_failure=f"[bold red]failed to wait for coredns init[/bold red]",
+        message_success=f"[green]coredns init[/green]"
+    )
+    configmap_coredns_source = execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "get",
+            "configmap",
+            "coredns",
+            "-o",
+            "yaml"
+        ],
+        message_failure=f"[bold red]failed read coredns configuration[/bold red]",
+        message_success=f"[green]read coredns configuration[/green]"
+    )
+    configmap_coredns_source_path = "configmap_coredns_source.yaml"
+    with open(configmap_coredns_source_path, "w") as configmap_coredns_source_file:
+        configmap_coredns_source = configmap_coredns_source.replace(
+            "ready\n        kubernetes",
+            "ready\n"
+            "        rewrite stop {\n"
+            "          name regex (.*\.)?local\.synpulse8\.com host.k3d.internal\n"
+            "        }\n"
+            "        kubernetes", 1)
+        configmap_coredns_source_file.write(configmap_coredns_source)
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "apply",
+            "-f",
+            configmap_coredns_source_path,
+        ],
+        message_failure=f"[bold red]failed to apply new coredns configuration[/bold red]",
+        message_success=f"[green]applied new coredns configuration[/green]"
+    )
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "rollout",
+            "restart",
+            "deployment",
+            "coredns",
+        ],
+        message_failure=f"[bold red]failed to restart coredns deployment[/bold red]",
+        message_success=f"[green]restarted coredns deployment[/green]"
+    )
+    os.remove(configmap_coredns_source_path)
     print(f"installing flux into environment (id: {identifier})...")
     args = ("flux", "install")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
