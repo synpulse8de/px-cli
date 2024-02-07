@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import subprocess
 
 from pathlib import Path
 from uuid import uuid4
@@ -71,18 +72,18 @@ def git_init():
     os.system("git add .")
     os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
     os.system("git branch -M main")
+    current_git_path = os.getcwd().replace("\\", "/")
+    os.system(f"git config --global --add safe.directory {current_git_path}")
 
 
 def git_create_remote(
-    create_remote_repo: str, repository_name: str, github_user: str, github_token: str
+    create_remote_repo: bool, repository_name: str, github_user: str, github_token: str
 ):
-    if create_remote_repo is not None:
-        print(
-            f"[green]Creating {create_remote_repo} repository {repository_name}[/green]"
-        )
+    if create_remote_repo:
+        print(f"[green]Creating private remote repository {repository_name}[/green]")
 
         os.system(
-            f"gh repo create {repository_name} --{create_remote_repo} --source=. --remote=upstream"
+            f"gh repo create {repository_name} --private --source=. --remote=upstream"
         )
         os.system(
             f"git remote add origin https://{github_token}@github.com/{github_user}/{repository_name}.git"
@@ -140,3 +141,37 @@ def rename_template_tmp_dir(tmp_dir, new_name):
     tmp_dir = tmp_dir.rename(new_name)
     os.chdir(tmp_dir)
     return tmp_dir
+
+
+def get_maven_wrapper_executable():
+    if is_windows():
+        return "mvnw.cmd"
+    else:
+        return "./mvnw"
+
+
+def execute_shell_command(
+    command_array: list[str],
+    message_success: str = "",
+    message_failure: str = "",
+    print_output: bool = True,
+) -> str:
+    """
+    Execute a command and print the output.
+    If the command fails, print the error message and exit with error code 1.
+    """
+
+    pipe = subprocess.Popen(
+        command_array, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    res: tuple[bytes, bytes] = pipe.communicate()
+    if pipe.returncode == 1:
+        if message_failure:
+            print(f"[bold red]{message_failure})[/bold red]")
+        print(res[1].decode("utf8"))
+        exit(1)
+    if print_output:
+        print(res[0].decode("utf8"))
+    if message_success:
+        print(f"[green]{message_success}[/green]")
+    return res[0].decode("utf8")

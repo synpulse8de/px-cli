@@ -4,6 +4,7 @@ from typing_extensions import Annotated
 from pulse8_core_cli.backend_shared_lib.functions import (
     backend_shared_lib_create,
     backend_shared_lib_update,
+    backend_shared_lib_release,
 )
 
 app = typer.Typer()
@@ -13,8 +14,8 @@ app = typer.Typer()
 def create(
     answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
     create_remote_repository: Annotated[
-        str,
-        typer.Option(help="Create remote repository [options: no/private/internal]"),
+        bool,
+        typer.Option(help="Create private remote repository"),
     ] = None,
     defaults: Annotated[
         bool, typer.Option(help="Use default answers and skip questions")
@@ -51,3 +52,11 @@ def delete():
     Delete an existing backend shared lib
     """
     print(f"[WIP]...")
+
+
+@app.command()
+def release(version: str, title: str):
+    """
+    Create a GitHub release for an existing backend shared lib
+    """
+    backend_shared_lib_release(version, title)
