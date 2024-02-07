@@ -29,7 +29,9 @@ from pulse8_core_cli.environment.constants import (
     SERVICES_DEPENDENCIES_SERVICES,
     KEY_CHOICES_INFRA_KEYCLOAK,
     INFRA_DEPENDENCIES_INFRA,
-    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT, KEY_CHOICES_INFRA_SPARK,
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT,
+    KEY_CHOICES_INFRA_SPARK,
+    KEY_CHOICES_INFRA_NIFI,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -656,6 +658,30 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Apache Spark using Flux[/green]")
             print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_NIFI in infra:
+            print("Installing Apache NiFi using Flux...")
+            args = ("flux", "create", "source", "git", "pulse8-core-env-nifi-repo",
+                    "--url=https://github.com/synpulse-group/pulse8-core-env-nifi.git", "--branch=main",
+                    "--secret-ref=github-token")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache NiFi git source using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache NiFi git source using Flux[/green]")
+            print(res[0].decode('utf8'))
+            args = ("flux", "create", "kustomization", "pulse8-core-env-nifi",
+                    "--source=GitRepository/pulse8-core-env-nifi-repo", "--interval=1m", "--prune=true",
+                    "--target-namespace=default")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache NiFi using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache NiFi using Flux[/green]")
+            print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -937,6 +963,25 @@ def env_install_choices(
                     exit(1)
                 print(f"[green]Uninstalled Apache Spark using Flux[/green]")
                 print(res[0].decode('utf8'))
+            if KEY_CHOICES_INFRA_NIFI not in choices_infra and KEY_CHOICES_INFRA_NIFI in choices_infra_old:
+                print("Uninstalling Apache NiFi using Flux...")
+                args = ("flux", "delete", "source", "git", "pulse8-core-env-nifi-repo", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache NiFi git source using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(res[0].decode('utf8'))
+                args = ("flux", "delete", "kustomization", "pulse8-core-env-nifi", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache NiFi using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(f"[green]Uninstalled Apache NiFi using Flux[/green]")
+                print(res[0].decode('utf8'))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
@@ -1001,7 +1046,7 @@ def get_questions(
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
-            # ("HDFS", KEY_CHOICES_INFRA_HDFS),
+            ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
         ]
     else:
         choices_infra = [
@@ -1012,7 +1057,7 @@ def get_questions(
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
-            # ("HDFS", KEY_CHOICES_INFRA_HDFS),
+            ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
         ]
     questions = [
         inquirer.Checkbox(
@@ -1085,8 +1130,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_KEYCLOAK)
             if KEY_CHOICES_INFRA_SPARK in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_SPARK)
-            # if KEY_CHOICES_INFRA_HDFS in choices_infra:
-            #     preselection_infra.append(KEY_CHOICES_INFRA_HDFS)
+            if KEY_CHOICES_INFRA_NIFI in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_NIFI)
         if KEY_CHOICES_SERVICES in setup:
             choices_services = setup[KEY_CHOICES_SERVICES]
             if (
