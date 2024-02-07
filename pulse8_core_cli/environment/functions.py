@@ -174,12 +174,26 @@ def env_create(
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(
-            f"[bold red]failed installing pull secrets (synpulse.jfrog.io) into environment (id: {identifier})"
-            f"[/bold red]"
+            f"[bold red]failed installing pull secrets (synpulse.jfrog.io) into environment (id: {identifier})[/bold red]"
         )
         print(res[1].decode("utf8"))
         exit(1)
     print(res[0].decode("utf8"))
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "flux-system",
+            "create",
+            "secret",
+            "generic",
+            "synpulse-jfrog-docker-credential",
+            f"--from-file=.dockerconfigjson={jfrog_dockerconfigjson_path}",
+            "--type=kubernetes.io/dockerconfigjson",
+        ],
+        message_failure=f"[bold red]failed installing pull secrets (synpulse.jfrog.io/flux-system) into environment (id: {identifier})[/bold red]",
+        message_success=f"[green]installed pull secrets (synpulse.jfrog.io/flux-system) into environment (id: {identifier})[/green]"
+    )
     print(
         f"[green]installed pull secrets (ghcr.io, synpulse.jfrog.io) into environment (id: {identifier})[/green]"
     )
@@ -1306,6 +1320,8 @@ def create_certificates() -> None:
             key_path,
             "-cert-file",
             cert_path,
+            "local.synpulse8.com",
+            "*.local.synpulse8.com",
             "pulse8.localhost",
             "*.pulse8.localhost",
             "localhost",
