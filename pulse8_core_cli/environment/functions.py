@@ -29,7 +29,9 @@ from pulse8_core_cli.environment.constants import (
     SERVICES_DEPENDENCIES_SERVICES,
     KEY_CHOICES_INFRA_KEYCLOAK,
     INFRA_DEPENDENCIES_INFRA,
-    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT, KEY_CHOICES_INFRA_SPARK,
+    KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT,
+    KEY_CHOICES_INFRA_SPARK,
+    KEY_CHOICES_INFRA_NIFI,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -97,6 +99,70 @@ def env_create(
         exit(1)
     print(f"[green]started environment (id: {identifier})[/green]")
     print(res[0].decode("utf8"))
+    print(f"[bold]starting post creation steps for environment (id: {identifier})...[/bold]")
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "rollout",
+            "status",
+            "deployment",
+            "coredns"
+        ],
+        message_failure=f"[bold red]failed to wait for coredns init[/bold red]",
+        message_success=f"[green]coredns init[/green]"
+    )
+    configmap_coredns_source = execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "get",
+            "configmap",
+            "coredns",
+            "-o",
+            "yaml"
+        ],
+        message_failure=f"[bold red]failed read coredns configuration[/bold red]",
+        message_success=f"[green]read coredns configuration[/green]"
+    )
+    configmap_coredns_source_path = "configmap_coredns_source.yaml"
+    with open(configmap_coredns_source_path, "w") as configmap_coredns_source_file:
+        configmap_coredns_source = configmap_coredns_source.replace(
+            "ready\n        kubernetes",
+            "ready\n"
+            "        rewrite stop {\n"
+            "          name regex (.*\.)?local\.synpulse8\.com host.k3d.internal\n"
+            "        }\n"
+            "        kubernetes", 1)
+        configmap_coredns_source_file.write(configmap_coredns_source)
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "apply",
+            "-f",
+            configmap_coredns_source_path,
+        ],
+        message_failure=f"[bold red]failed to apply new coredns configuration[/bold red]",
+        message_success=f"[green]applied new coredns configuration[/green]"
+    )
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "kube-system",
+            "rollout",
+            "restart",
+            "deployment",
+            "coredns",
+        ],
+        message_failure=f"[bold red]failed to restart coredns deployment[/bold red]",
+        message_success=f"[green]restarted coredns deployment[/green]"
+    )
+    os.remove(configmap_coredns_source_path)
     print(f"installing flux into environment (id: {identifier})...")
     args = ("flux", "install")
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -172,12 +238,26 @@ def env_create(
     res: tuple[bytes, bytes] = pipe.communicate()
     if pipe.returncode == 1:
         print(
-            f"[bold red]failed installing pull secrets (synpulse.jfrog.io) into environment (id: {identifier})"
-            f"[/bold red]"
+            f"[bold red]failed installing pull secrets (synpulse.jfrog.io) into environment (id: {identifier})[/bold red]"
         )
         print(res[1].decode("utf8"))
         exit(1)
     print(res[0].decode("utf8"))
+    execute_shell_command(
+        command_array=[
+            "kubectl",
+            "-n",
+            "flux-system",
+            "create",
+            "secret",
+            "generic",
+            "synpulse-jfrog-docker-credential",
+            f"--from-file=.dockerconfigjson={jfrog_dockerconfigjson_path}",
+            "--type=kubernetes.io/dockerconfigjson",
+        ],
+        message_failure=f"[bold red]failed installing pull secrets (synpulse.jfrog.io/flux-system) into environment (id: {identifier})[/bold red]",
+        message_success=f"[green]installed pull secrets (synpulse.jfrog.io/flux-system) into environment (id: {identifier})[/green]"
+    )
     print(
         f"[green]installed pull secrets (ghcr.io, synpulse.jfrog.io) into environment (id: {identifier})[/green]"
     )
@@ -656,6 +736,30 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Apache Spark using Flux[/green]")
             print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_NIFI in infra:
+            print("Installing Apache NiFi using Flux...")
+            args = ("flux", "create", "source", "git", "pulse8-core-env-nifi-repo",
+                    "--url=https://github.com/synpulse-group/pulse8-core-env-nifi.git", "--branch=main",
+                    "--secret-ref=github-token")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache NiFi git source using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache NiFi git source using Flux[/green]")
+            print(res[0].decode('utf8'))
+            args = ("flux", "create", "kustomization", "pulse8-core-env-nifi",
+                    "--source=GitRepository/pulse8-core-env-nifi-repo", "--interval=1m", "--prune=true",
+                    "--target-namespace=default")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache NiFi using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache NiFi using Flux[/green]")
+            print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -937,6 +1041,25 @@ def env_install_choices(
                     exit(1)
                 print(f"[green]Uninstalled Apache Spark using Flux[/green]")
                 print(res[0].decode('utf8'))
+            if KEY_CHOICES_INFRA_NIFI not in choices_infra and KEY_CHOICES_INFRA_NIFI in choices_infra_old:
+                print("Uninstalling Apache NiFi using Flux...")
+                args = ("flux", "delete", "source", "git", "pulse8-core-env-nifi-repo", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache NiFi git source using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(res[0].decode('utf8'))
+                args = ("flux", "delete", "kustomization", "pulse8-core-env-nifi", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache NiFi using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(f"[green]Uninstalled Apache NiFi using Flux[/green]")
+                print(res[0].decode('utf8'))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
@@ -1001,7 +1124,7 @@ def get_questions(
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
-            # ("HDFS", KEY_CHOICES_INFRA_HDFS),
+            ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
         ]
     else:
         choices_infra = [
@@ -1012,7 +1135,7 @@ def get_questions(
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
-            # ("HDFS", KEY_CHOICES_INFRA_HDFS),
+            ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
         ]
     questions = [
         inquirer.Checkbox(
@@ -1085,8 +1208,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_KEYCLOAK)
             if KEY_CHOICES_INFRA_SPARK in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_SPARK)
-            # if KEY_CHOICES_INFRA_HDFS in choices_infra:
-            #     preselection_infra.append(KEY_CHOICES_INFRA_HDFS)
+            if KEY_CHOICES_INFRA_NIFI in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_NIFI)
         if KEY_CHOICES_SERVICES in setup:
             choices_services = setup[KEY_CHOICES_SERVICES]
             if (
@@ -1261,6 +1384,8 @@ def create_certificates() -> None:
             key_path,
             "-cert-file",
             cert_path,
+            "local.synpulse8.com",
+            "*.local.synpulse8.com",
             "pulse8.localhost",
             "*.pulse8.localhost",
             "localhost",
