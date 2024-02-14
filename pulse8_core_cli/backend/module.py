@@ -1,7 +1,11 @@
 import typer
 from typing_extensions import Annotated
 
-from pulse8_core_cli.backend.functions import backend_create, backend_update, backend_release
+from pulse8_core_cli.backend.functions import (
+    backend_create,
+    backend_update,
+    backend_release,
+)
 
 app = typer.Typer()
 
