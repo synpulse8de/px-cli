@@ -3,7 +3,7 @@ import subprocess
 from rich import print
 from pathlib import Path
 import inquirer
-from inquirer import Checkbox
+from inquirer import Checkbox, Text, Confirm, prompt
 
 GIT_REPO_ORG = "synpulse-group"
 GIT_REPO_NAME = "pulse8-app-deployments"
@@ -42,8 +42,44 @@ def get_updated_local_clone_of_repo(
     )
     _, stderr = pipe.communicate()
     if pipe.returncode != 0:
-        print(f"[bold red]failed to update repo.[/bold red]")
+        print("[bold red]failed to update repo.[/bold red]")
         print(stderr.decode("utf8"))
         exit(1)
     print("[bold green]done.[/bold green]")
     return pipe.returncode
+
+
+def collect_multiple_inputs(input_prompt):
+    env_vars = {}
+    while True:
+        questions = [Text("env_var", message=input_prompt)]
+        answers = prompt(questions)
+        env_var = answers["env_var"]
+        if env_var.lower() == "done":
+            break
+
+        try:
+            key, value = [x.strip() for x in env_var.split(":")]
+            if not (key and value.startswith('"') and value.endswith('"')):
+                raise ValueError
+            env_vars[key] = value.strip('"')
+        except ValueError:
+            print(
+                'Invalid format. Please enter the environment variable in the format `KEY: "VALUE"`'
+            )
+
+    return env_vars
+
+
+def get_deployment_repo_path_for_current_project_dir() -> Path:
+    repository_name = os.path.basename(os.getcwd())
+
+    # clone the file into app deployments directory
+    deployment_repo_path = (
+        Path("clusters")
+        / "aws"
+        / "105815711361"
+        / "pulse8-cluster-primary"
+        / repository_name
+    )
+    return deployment_repo_path

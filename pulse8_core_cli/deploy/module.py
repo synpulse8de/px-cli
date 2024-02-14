@@ -14,6 +14,8 @@ from .functions import (
     get_deployments_repo_directory,
     get_deployments_git_repo,
     get_updated_local_clone_of_repo,
+    get_deployment_repo_path_for_current_project_dir,
+    collect_multiple_inputs,
 )
 
 app = typer.Typer()
@@ -56,18 +58,12 @@ def submit():
     # get the filename only, in a way that works across all OS
     deployment_to_submit = os.path.basename(deployment_to_submit["deployment"])
 
-    # get the name of the current git project
+    # get repository name
     repository_name = os.path.basename(os.getcwd())
 
-    # clone the file into app deployments directory
-    deployments_helm_dir = (
-        deployments_repo_directory
-        / "clusters"
-        / "aws"
-        / "105815711361"
-        / "pulse8-cluster-primary"
-        / repository_name
-    )
+    # get the deployment repo and folder path
+    deployments_helm_dir = get_deployment_repo_path_for_current_project_dir()
+    deployments_helm_dir = deployments_repo_directory / deployments_helm_dir
     deployments_helm_dir.mkdir(parents=True, exist_ok=True)
 
     # read the local file
@@ -132,11 +128,13 @@ def create():
 
     # parse project inputs
     input_project_name = typer.prompt("What is the name of your project?")
-    input_deployment_port = typer.prompt(
-        "What is the port of your deployment?", default="8000"
-    )
     input_env_name = typer.prompt(
         "What environment do you want to deploy to?", default="dev"
+    )
+
+    # deployment details
+    input_deployment_port = typer.prompt(
+        "What is the port of your deployment?", default="8000"
     )
     input_branch_name = typer.prompt(
         "What branch do you want to deploy from?", default="develop"
@@ -145,8 +143,30 @@ def create():
         "What is the ingress path for your deployment?", default="/"
     )
 
+    # env vars
+    print(
+        "Configuring [bold]environment variables[/bold] for your deployment. [bold]Input `done` to finish.[/bold]"
+    )
+    env_vars = collect_multiple_inputs(
+        input_prompt='Please enter an env var in the format `KEY: "VALUE"`',
+    )
+
+    # secrets
+    print(
+        "Configuring [bold]environment secrets[/bold] for your deployment, "
+        "to be fetched from AWS SSM ([italic][link=https://github.com/synpulse-group/pulse8-app-deployments/blob/main/docs/accessing-secrets.md]see docs[/link][/italic]). "
+        "[bold]Input `done` to finish.[/bold]"
+    )
+    print("")
+    secret_vars = collect_multiple_inputs(
+        input_prompt='Please enter an env var in the format `KEY: "/aws/ssm/path/to/secret"`',
+    )
+
     # GET CURRENT REPO_NAME
     repository_name = os.path.basename(os.getcwd())
+
+    # get deployment filepath
+    deployment_filepath = get_deployment_repo_path_for_current_project_dir()
 
     environment = Environment(
         loader=FileSystemLoader("./pulse8_core_cli/deploy/templates/")
@@ -160,9 +180,9 @@ def create():
         image_repository=f"synpulse.jfrog.io/s8-docker-local/synpulse-group-{repository_name}-{input_branch_name}",
         application_port=input_deployment_port,
         ingress_route=input_ingress_path,
-        automatic_deployment_filepath="",  # TODO: Where do we place the file?
-        env_vars="",  # TODO: Env vars?
-        env_secret_params="",  # TODO: Secrets?
+        automatic_deployment_filepath=deployment_filepath,
+        env_vars=env_vars,
+        env_secret_params=secret_vars,
     )
 
     # save into current directory, under k8s/helm/{{envname}}
@@ -183,5 +203,5 @@ def create():
 
     print(f"Your deployment manifest has been created in ./{current_helm_dir}.")
     print(
-        f"Please use [bold]`pulse8 deploy submit`[/bold] to submit your deployment manifest for review and deployment."
+        "Please use [bold]`pulse8 deploy submit`[/bold] to submit your deployment manifest for review and deployment."
     )

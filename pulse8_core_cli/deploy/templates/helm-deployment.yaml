@@ -37,17 +37,21 @@ spec:
       tag: "0000000000" # {"$imagepolicy": "{{ namespace }}:{{ chart_name }}:tag"}
       pullSecret:
         name: synpulse-jfrog-docker-credential
-        create: true{% if env_vars %}
+        create: true
+    {% if env_vars -%}
     env: # Environment variables to be set for the container
-      {% for env_variable_line in env_vars %}
-      {{ var_line }}
-      {% endfor %}
-    {% endif %}{% if env_secret_params %}
+      {% for key, value in env_vars.items() -%}
+      {{key}} : '{{value}}'{{ "
+      " if not loop.last }}
+      {%- endfor %}
+    {%- endif %}
+    {% if env_secret_params -%}
     envSecretParameters: # Environment variables from AWS SSM Parameter Store - instead of specifying a value, specify the path from AWS SSM
-      {% for env_variable_line in env_secret_params %}
-      {{ var_line }}
-      {% endfor %}
-    {% endif %}
+      {% for key, value in env_secret_params.items() -%}
+      {{key}} : '{{value}}'{{ "
+      " if not loop.last }}
+      {%- endfor %}
+    {%- endif %}
     service:
       ports:
         - name: primary-port
