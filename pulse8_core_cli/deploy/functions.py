@@ -1,9 +1,9 @@
 import os
 import subprocess
-from rich import print
 from pathlib import Path
-import inquirer
-from inquirer import Checkbox, Text, Confirm, prompt
+
+from inquirer import Text, prompt
+from rich import print
 
 GIT_REPO_ORG = "synpulse-group"
 GIT_REPO_NAME = "pulse8-app-deployments"
@@ -26,15 +26,16 @@ def get_deployments_git_repo() -> str:
     return f"{GIT_REPO_ORG}/{GIT_REPO_NAME}"
 
 
-def get_updated_local_clone_of_repo(
-    target_dir: str, repo_name: str, branch_name="main"
-) -> int:
+def get_updated_local_clone_of_repo(target_dir: str, repo_name: str) -> int:
+    """
+    Given a repo, clones the repo if it doesn't exist or otherwise gets the latest changes from the main branch.
+    """
     print(
         "[bold deep_sky_blue1]Initializing local clone of deployments GitOps repo... [/bold deep_sky_blue1]",
         end="",
     )
     pipe = subprocess.Popen(
-        f"git switch {branch_name} && git pull || git clone https://github.com/{repo_name}",
+        f"git switch main && git pull || git clone https://github.com/{repo_name}",
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -49,7 +50,11 @@ def get_updated_local_clone_of_repo(
     return pipe.returncode
 
 
-def collect_multiple_inputs(input_prompt):
+def collect_multiple_inputs(input_prompt) -> dict[str, str]:
+    """
+    Given an input prompt, collects an arbitrary number of `KEY: "VALUE"` pairs from the user and
+    provides them them as a dictionary. The format is enforced and invalid values are not returned.
+    """
     env_vars = {}
     while True:
         questions = [Text("env_var", message=input_prompt)]
@@ -72,9 +77,10 @@ def collect_multiple_inputs(input_prompt):
 
 
 def get_deployment_repo_path_for_current_project_dir() -> Path:
+    """
+    Assembles a path inside the primary GitOps repo that stores the manifests for the current project.
+    """
     repository_name = os.path.basename(os.getcwd())
-
-    # clone the file into app deployments directory
     deployment_repo_path = (
         Path("clusters")
         / "aws"
