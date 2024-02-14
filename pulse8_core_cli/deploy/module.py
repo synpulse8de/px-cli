@@ -4,9 +4,9 @@ import yaml
 
 from jinja2 import Environment, FileSystemLoader
 import typer
-from typing_extensions import Annotated
 from pathlib import Path
 from rich import print
+from rich.prompt import Prompt
 import inquirer
 
 from pulse8_core_cli.shared.module import execute_shell_command
@@ -127,20 +127,21 @@ def create():
     )
 
     # parse project inputs
-    input_project_name = typer.prompt("What is the name of your project?")
-    input_env_name = typer.prompt(
-        "What environment do you want to deploy to?", default="dev"
+    input_project_name = Prompt.ask("What is the [bold]name[/bold] of your project?")
+    input_env_name = Prompt.ask(
+        "What [bold]environment[/bold] do you want to deploy to?", default="dev"
     )
 
     # deployment details
-    input_deployment_port = typer.prompt(
-        "What is the port of your deployment?", default="8000"
+    input_deployment_port = Prompt.ask(
+        "What is the [bold]port[/bold] of your deployment?", default="8000"
     )
-    input_branch_name = typer.prompt(
-        "What branch do you want to deploy from?", default="develop"
+    input_branch_name = Prompt.ask(
+        "What [bold]branch[/bold] of your app repo do you want to deploy this environment from?",
+        default="develop",
     )
-    input_ingress_path = typer.prompt(
-        "What is the ingress path for your deployment?", default="/"
+    input_ingress_path = Prompt.ask(
+        "What is the [bold]ingress path[/bold] for your deployment?", default="/"
     )
 
     # env vars
