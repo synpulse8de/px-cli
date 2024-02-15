@@ -170,6 +170,7 @@ def execute_shell_command(
     if pipe.returncode == 1:
         if message_failure:
             print(f"[bold red]{message_failure})[/bold red]")
+        print(res[0].decode("utf8"))
         print(res[1].decode("utf8"))
         exit(1)
     if print_output:
