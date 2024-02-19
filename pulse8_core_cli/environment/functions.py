@@ -32,6 +32,7 @@ from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT,
     KEY_CHOICES_INFRA_SPARK,
     KEY_CHOICES_INFRA_NIFI,
+    KEY_CHOICES_INFRA_MARIADB,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -624,6 +625,50 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Exasol using Flux[/green]")
             print(res[0].decode("utf8"))
+        if KEY_CHOICES_INFRA_MARIADB in infra:
+            print("Installing MariaDB using Flux...")
+            args = (
+                "flux",
+                "create",
+                "source",
+                "git",
+                "pulse8-core-env-mariadb-repo",
+                "--url=https://github.com/synpulse-group/pulse8-core-env-mariadb.git",
+                "--branch=main",
+                "--secret-ref=github-token",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(
+                    f"[bold red]Failed to install MariaDB git source using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
+                exit(1)
+            print(f"[green]Installed MariaDB git source using Flux[/green]")
+            print(res[0].decode("utf8"))
+            args = (
+                "flux",
+                "create",
+                "kustomization",
+                "pulse8-core-env-mariadb",
+                "--source=GitRepository/pulse8-core-env-mariadb-repo",
+                "--interval=1m",
+                "--prune=true",
+                "--target-namespace=default",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install MariaDB using Flux[/bold red]")
+                print(res[1].decode("utf8"))
+                exit(1)
+            print(f"[green]Installed MariaDB using Flux[/green]")
+            print(res[0].decode("utf8"))
         if KEY_CHOICES_INFRA_TEEDY in infra:
             print("Installing Teedy using Flux...")
             args = (
@@ -939,6 +984,49 @@ def env_install_choices(
                 print(f"[green]Uninstalled Exasol using Flux[/green]")
                 print(res[0].decode("utf8"))
             if (
+                KEY_CHOICES_INFRA_MARIADB not in choices_infra
+                and KEY_CHOICES_INFRA_MARIADB in choices_infra_old
+            ):
+                print("Uninstalling MariaDB using Flux...")
+                args = (
+                    "flux",
+                    "delete",
+                    "source",
+                    "git",
+                    "pulse8-core-env-mariadb-repo",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(
+                        f"[bold red]Failed to uninstall MariaDB git source using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
+                    exit(1)
+                print(res[0].decode("utf8"))
+                args = (
+                    "flux",
+                    "delete",
+                    "kustomization",
+                    "pulse8-core-env-mariadb",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(
+                        f"[bold red]Failed to uninstall MariaDB using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
+                    exit(1)
+                print(f"[green]Uninstalled MariaDB using Flux[/green]")
+                print(res[0].decode("utf8"))
+            if (
                 KEY_CHOICES_INFRA_TEEDY not in choices_infra
                 and KEY_CHOICES_INFRA_TEEDY in choices_infra_old
             ):
@@ -1121,6 +1209,7 @@ def get_questions(
             ("Redis", KEY_CHOICES_INFRA_REDIS),
             # not supported on arm64 - maybe bring proxy solution in place
             # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
+            ("MariaDB", KEY_CHOICES_INFRA_MARIADB),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
@@ -1132,6 +1221,7 @@ def get_questions(
             ("Kafka (Confluent for Kubernetes)", KEY_CHOICES_INFRA_KAFKA),
             ("Redis", KEY_CHOICES_INFRA_REDIS),
             ("Exasol", KEY_CHOICES_INFRA_EXASOL),
+            ("MariaDB", KEY_CHOICES_INFRA_MARIADB),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
@@ -1202,6 +1292,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_KAFKA)
             if KEY_CHOICES_INFRA_EXASOL in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_EXASOL)
+            if KEY_CHOICES_INFRA_MARIADB in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_MARIADB)
             if KEY_CHOICES_INFRA_TEEDY in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_TEEDY)
             if KEY_CHOICES_INFRA_KEYCLOAK in choices_infra:
