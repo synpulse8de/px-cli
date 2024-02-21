@@ -5,7 +5,7 @@ from pathlib import Path
 import inquirer
 import typer
 import yaml
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, PackageLoader
 from pulse8_core_cli.shared.module import execute_shell_command
 from rich import print
 from rich.prompt import Prompt
@@ -78,7 +78,7 @@ def create():
     deployment_filepath = get_deployment_repo_path_for_current_project_dir()
 
     environment = Environment(
-        loader=FileSystemLoader("./pulse8_core_cli/deploy/templates/")
+        loader=PackageLoader("pulse8_core_cli.deploy", package_path="templates")
     )
     template = environment.get_template("helm-deployment.yaml")
     rendered_template = template.render(
@@ -186,11 +186,11 @@ def submit():
     )
 
     # create commit
-    command = f"git -C {str(deployments_repo_directory)} commit -m 'deploy({repository_name}-{environment_abbreviation}): add deployment {deployment_to_submit}'"
+    command = f"git -C {str(deployments_repo_directory)} commit -m \"deploy({repository_name}-{environment_abbreviation}): add deployment {deployment_to_submit}\""
     subprocess.Popen(command, shell=True).communicate()
 
     # create a draft PR
-    command = f"cd {str(deployments_repo_directory)} && gh pr create --title 'Deploy new app: {repository_name}' --draft --fill --body-file .github/new_deployment_pr_template.md"
+    command = f"cd {str(deployments_repo_directory)} && gh pr create --title \"Deploy new app: {repository_name}\" --draft --fill --body-file .github/new_deployment_pr_template.md"
     subprocess.Popen(command, shell=True).communicate()
 
     # open the created PR in the browser
