@@ -26,7 +26,7 @@ def get_deployments_git_repo() -> str:
     return f"{GIT_REPO_ORG}/{GIT_REPO_NAME}"
 
 
-def get_updated_local_clone_of_repo(target_dir: str, repo_name: str) -> int:
+def get_updated_local_clone_of_repo(target_dir: str | Path, repo_name: str) -> int:
     """
     Given a repo, clones the repo if it doesn't exist or otherwise gets the latest changes from the main branch.
     """
