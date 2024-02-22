@@ -118,8 +118,16 @@ def create():
 
 
 @app.command()
-def submit(deployment_to_submit: Annotated[str, typer.Option(help="Filename of your yaml helm deployment located in /k8s/helm")] = None,
-           push_branch: Annotated[bool, typer.Option(help="Automatically push branch to pulse8-app-deployments repo")] = False):
+def submit(
+    deployment_to_submit: Annotated[
+        str,
+        typer.Option(help="Filename of your yaml helm deployment located in /k8s/helm"),
+    ] = None,
+    push_branch: Annotated[
+        bool,
+        typer.Option(help="Automatically push branch to pulse8-app-deployments repo"),
+    ] = False,
+):
     """
     Submit your project's deployment manifests to the master GitOps repo for review and deployment.
     """
@@ -187,7 +195,7 @@ def submit(deployment_to_submit: Annotated[str, typer.Option(help="Filename of y
     )
 
     # create commit
-    command = f"git -C {str(deployments_repo_directory)} commit -m \"deploy({repository_name}-{environment_abbreviation}): add deployment {deployment_to_submit}\""
+    command = f'git -C {str(deployments_repo_directory)} commit -m "deploy({repository_name}-{environment_abbreviation}): add deployment {deployment_to_submit}"'
     subprocess.Popen(command, shell=True).communicate()
 
     # push branch automatically if set to true to skip prompt in "gh pr create" command
@@ -196,7 +204,7 @@ def submit(deployment_to_submit: Annotated[str, typer.Option(help="Filename of y
         subprocess.Popen(command, shell=True).communicate()
 
     # create a draft PR
-    command = f"cd {str(deployments_repo_directory)} && gh pr create --title \"Deploy new app: {repository_name}\" --draft --fill --body-file .github/new_deployment_pr_template.md"
+    command = f'cd {str(deployments_repo_directory)} && gh pr create --title "Deploy new app: {repository_name}" --draft --fill --body-file .github/new_deployment_pr_template.md'
     subprocess.Popen(command, shell=True).communicate()
 
     # open the created PR in the browser
