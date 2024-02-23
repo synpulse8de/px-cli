@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: pulse8-microservice
-      version: "0.1.*"
+      version: "0.2.*"
       sourceRef:
         name: pulse8-helm-charts-oci
         namespace: flux-system
