@@ -1,11 +1,12 @@
 import os
 import subprocess
 from pathlib import Path
+from typing import Annotated
 
 import inquirer
 import typer
 import yaml
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, PackageLoader
 from pulse8_core_cli.shared.module import execute_shell_command
 from rich import print
 from rich.prompt import Prompt
@@ -78,7 +79,7 @@ def create():
     deployment_filepath = get_deployment_repo_path_for_current_project_dir()
 
     environment = Environment(
-        loader=FileSystemLoader("./pulse8_core_cli/deploy/templates/")
+        loader=PackageLoader("pulse8_core_cli.deploy", package_path="templates")
     )
     template = environment.get_template("helm-deployment.yaml")
     rendered_template = template.render(
@@ -117,7 +118,16 @@ def create():
 
 
 @app.command()
-def submit():
+def submit(
+    deployment_to_submit: Annotated[
+        str,
+        typer.Option(help="Filename of your yaml helm deployment located in /k8s/helm"),
+    ] = None,
+    push_branch: Annotated[
+        bool,
+        typer.Option(help="Automatically push branch to pulse8-app-deployments repo"),
+    ] = False,
+):
     """
     Submit your project's deployment manifests to the master GitOps repo for review and deployment.
     """
@@ -127,22 +137,21 @@ def submit():
         repo_name=get_deployments_git_repo(),
     )
 
-    # find all local deployment manifests in ./k8s/helm folder
-    deployment_manifests = list(Path("./k8s/helm").glob("*.yaml"))
-
-    # make user choose which one to submit
-    deployment_to_submit = inquirer.prompt(
-        [
-            inquirer.List(
-                "deployment",
-                message="Which deployment do you want to submit?",
-                choices=[str(x) for x in deployment_manifests],
-            )
-        ]
-    )
-
-    # get the filename only, in a way that works across all OS
-    deployment_to_submit = os.path.basename(deployment_to_submit["deployment"])
+    if deployment_to_submit is None:
+        # find all local deployment manifests in ./k8s/helm folder
+        deployment_manifests = list(Path("./k8s/helm").glob("*.yaml"))
+        # make user choose which one to submit
+        deployment_to_submit = inquirer.prompt(
+            [
+                inquirer.List(
+                    "deployment",
+                    message="Which deployment do you want to submit?",
+                    choices=[str(x) for x in deployment_manifests],
+                )
+            ]
+        )
+        # get the filename only, in a way that works across all OS
+        deployment_to_submit = os.path.basename(deployment_to_submit["deployment"])
 
     # get repository name
     repository_name = os.path.basename(os.getcwd())
@@ -186,11 +195,16 @@ def submit():
     )
 
     # create commit
-    command = f"git -C {str(deployments_repo_directory)} commit -m 'deploy({repository_name}-{environment_abbreviation}): add deployment {deployment_to_submit}'"
+    command = f'git -C {str(deployments_repo_directory)} commit -m "deploy({repository_name}-{environment_abbreviation}): add deployment {deployment_to_submit}"'
     subprocess.Popen(command, shell=True).communicate()
 
+    # push branch automatically if set to true to skip prompt in "gh pr create" command
+    if push_branch:
+        command = f"git -C {str(deployments_repo_directory)} push -u origin"
+        subprocess.Popen(command, shell=True).communicate()
+
     # create a draft PR
-    command = f"cd {str(deployments_repo_directory)} && gh pr create --title 'Deploy new app: {repository_name}' --draft --fill --body-file .github/new_deployment_pr_template.md"
+    command = f'cd {str(deployments_repo_directory)} && gh pr create --title "Deploy new app: {repository_name}" --draft --fill --body-file .github/new_deployment_pr_template.md'
     subprocess.Popen(command, shell=True).communicate()
 
     # open the created PR in the browser
