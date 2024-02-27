@@ -33,6 +33,7 @@ from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_INFRA_SPARK,
     KEY_CHOICES_INFRA_NIFI,
     KEY_CHOICES_INFRA_MARIADB,
+    KEY_CHOICES_INFRA_CLOUDSERVER,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -805,6 +806,30 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Apache NiFi using Flux[/green]")
             print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_CLOUDSERVER in infra:
+            print("Installing Zenko Cloudserver (S3) using Flux...")
+            args = ("flux", "create", "source", "git", "pulse8-core-env-cloudserver-repo",
+                    "--url=https://github.com/synpulse-group/pulse8-core-env-cloudserver.git", "--branch=main",
+                    "--secret-ref=github-token")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Zenko Cloudserver (S3) git source using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Zenko Cloudserver (S3) git source using Flux[/green]")
+            print(res[0].decode('utf8'))
+            args = ("flux", "create", "kustomization", "pulse8-core-env-cloudserver",
+                    "--source=GitRepository/pulse8-core-env-cloudserver-repo", "--interval=1m", "--prune=true",
+                    "--target-namespace=default")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Zenko Cloudserver (S3) using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Zenko Cloudserver (S3) using Flux[/green]")
+            print(res[0].decode('utf8'))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -1148,6 +1173,25 @@ def env_install_choices(
                     exit(1)
                 print(f"[green]Uninstalled Apache NiFi using Flux[/green]")
                 print(res[0].decode('utf8'))
+            if KEY_CHOICES_INFRA_CLOUDSERVER not in choices_infra and KEY_CHOICES_INFRA_CLOUDSERVER in choices_infra_old:
+                print("Uninstalling Zenko Cloudserver (S3) using Flux...")
+                args = ("flux", "delete", "source", "git", "pulse8-core-env-cloudserver-repo", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Zenko Cloudserver (S3) git source using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(res[0].decode('utf8'))
+                args = ("flux", "delete", "kustomization", "pulse8-core-env-cloudserver", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Zenko Cloudserver (S3) using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(f"[green]Uninstalled Zenko Cloudserver (S3) using Flux[/green]")
+                print(res[0].decode('utf8'))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
@@ -1214,6 +1258,7 @@ def get_questions(
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
             ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
+            ("Zenko Cloudserver (S3)", KEY_CHOICES_INFRA_CLOUDSERVER),
         ]
     else:
         choices_infra = [
@@ -1226,6 +1271,7 @@ def get_questions(
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
             ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
+            ("Zenko Cloudserver (S3)", KEY_CHOICES_INFRA_CLOUDSERVER),
         ]
     questions = [
         inquirer.Checkbox(
@@ -1240,7 +1286,7 @@ def get_questions(
             choices=[
                 KEY_CHOICES_SERVICES_IAM,
                 KEY_CHOICES_SERVICES_NOTIFICATION_ENGINE,
-                # KEY_CHOICES_SERVICES_QUERY_ENGINE,
+                KEY_CHOICES_SERVICES_QUERY_ENGINE,
                 KEY_CHOICES_SERVICES_WORKFLOW_ENGINE,
                 KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT,
             ],
@@ -1302,6 +1348,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_SPARK)
             if KEY_CHOICES_INFRA_NIFI in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_NIFI)
+            if KEY_CHOICES_INFRA_CLOUDSERVER in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_CLOUDSERVER)
         if KEY_CHOICES_SERVICES in setup:
             choices_services = setup[KEY_CHOICES_SERVICES]
             if (
