@@ -26,7 +26,7 @@ def get_deployments_git_repo() -> str:
     return f"{GIT_REPO_ORG}/{GIT_REPO_NAME}"
 
 
-def get_updated_local_clone_of_repo(target_dir: str, repo_name: str) -> int:
+def get_updated_local_clone_of_repo(target_dir: str | Path, repo_name: str) -> int:
     """
     Given a repo, clones the repo if it doesn't exist or otherwise gets the latest changes from the main branch.
     """
@@ -35,7 +35,7 @@ def get_updated_local_clone_of_repo(target_dir: str, repo_name: str) -> int:
         end="",
     )
     pipe = subprocess.Popen(
-        f"git switch main && git pull || git clone https://github.com/{repo_name}",
+        f"git switch main && git pull || git clone https://github.com/{repo_name} .",
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -64,7 +64,7 @@ def collect_multiple_inputs(input_prompt) -> dict[str, str]:
             break
 
         try:
-            key, value = [x.strip() for x in env_var.split(":")]
+            key, value = [x.strip() for x in env_var.split(":", 1)]
             if not (key and value.startswith('"') and value.endswith('"')):
                 raise ValueError
             env_vars[key] = value.strip('"')
