@@ -38,7 +38,9 @@ def create(
     """
     Create a new frontend
     """
-    frontend_create(create_remote_repository, answers_file, defaults, skip_answered, ssh)
+    frontend_create(
+        create_remote_repository, answers_file, defaults, skip_answered, ssh
+    )
 
 
 @app.command()

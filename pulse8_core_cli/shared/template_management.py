@@ -82,7 +82,11 @@ def create_template(
 
 
 def update_template(
-    template_repo_name: str, answers_file: str, defaults: bool, skip_answered: bool, callback_after_update=None
+    template_repo_name: str,
+    answers_file: str,
+    defaults: bool,
+    skip_answered: bool,
+    callback_after_update=None,
 ):
     template_precheck()
     original_answers_file_path = get_answers_file_path(answers_file)
@@ -91,7 +95,9 @@ def update_template(
 
     answers_file = f"p8t_tmp_file_{str(uuid4())}.yaml"
 
-    with open(original_answers_file_path, 'r') as original_file, open(answers_file, 'w') as tmp_file:
+    with open(original_answers_file_path, "r") as original_file, open(
+        answers_file, "w"
+    ) as tmp_file:
         for line in original_file:
             tmp_file.write(line)
 
@@ -106,7 +112,9 @@ def update_template(
         skip_answered=skip_answered,
     )
 
-    with open(original_answers_file_path, 'w') as original_file, open(answers_file, 'r') as tmp_file:
+    with open(original_answers_file_path, "w") as original_file, open(
+        answers_file, "r"
+    ) as tmp_file:
         for line in tmp_file:
             original_file.write(line)
 
@@ -242,15 +250,17 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     )
 
 
-def update_answers_file_src_path(remove_github_user: bool = True,
-                                 template_repo_name: str = None,
-                                 answers_file_path: str = None):
+def update_answers_file_src_path(
+    remove_github_user: bool = True,
+    template_repo_name: str = None,
+    answers_file_path: str = None,
+):
     answers_file = None
     if answers_file_path is None:
         answers_file_path = get_answers_file_path()
 
     try:
-        with open(answers_file_path, 'r') as stream:
+        with open(answers_file_path, "r") as stream:
             try:
                 answers_file = yaml.unsafe_load(stream)
             except yaml.YAMLError as exy:
@@ -259,16 +269,24 @@ def update_answers_file_src_path(remove_github_user: bool = True,
     except FileNotFoundError:
         print("[bold][red]Could not find .copier-answers file[/red][/bold]")
 
-    if answers_file is not None and answers_file_path is not None and not re.match("git@github.com:", answers_file['_src_path']):
+    if (
+        answers_file is not None
+        and answers_file_path is not None
+        and not re.match("git@github.com:", answers_file["_src_path"])
+    ):
         if remove_github_user:
-            answers_file['_src_path'] = re.sub("//.*:.*@github\\.com/", "//github.com/", answers_file['_src_path'])
+            answers_file["_src_path"] = re.sub(
+                "//.*:.*@github\\.com/", "//github.com/", answers_file["_src_path"]
+            )
         else:
             env_vars = get_env_variables(silent=True)
             github_token = env_vars[ENV_GITHUB_TOKEN]
             github_user = env_vars[ENV_GITHUB_USER]
-            answers_file['_src_path'] = f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
+            answers_file[
+                "_src_path"
+            ] = f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
 
-        with open(answers_file_path, 'w') as stream:
+        with open(answers_file_path, "w") as stream:
             try:
                 yaml.dump(answers_file, stream, default_flow_style=False)
             except yaml.YAMLError as ex:

@@ -9,7 +9,11 @@ from pulse8_core_cli.shared.template_management import (
 
 
 def frontend_angular_create(
-    create_remote_repo: bool, answers_file: str, defaults: bool, skip_answered: bool, ssh: bool
+    create_remote_repo: bool,
+    answers_file: str,
+    defaults: bool,
+    skip_answered: bool,
+    ssh: bool,
 ):
     def callback_after_git_init():
         os.system("pnpm install")
@@ -27,7 +31,9 @@ def frontend_angular_create(
 
 
 def frontend_angular_update(answers_file: str, defaults: bool, skip_answered: bool):
-    update_template(TEMPLATE_REPO_FRONTEND_ANGULAR, answers_file, defaults, skip_answered)
+    update_template(
+        TEMPLATE_REPO_FRONTEND_ANGULAR, answers_file, defaults, skip_answered
+    )
 
 
 def frontend_angular_release(version: str, title: str):
