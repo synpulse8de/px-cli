@@ -31,12 +31,13 @@ def create(
     skip_answered: Annotated[
         bool, typer.Option(help="Skip answered questions")
     ] = False,
+    ssh: Annotated[bool, typer.Option(help="Use SSH for git remote")] = False,
 ):
     """
     Create a new frontend
     """
     frontend_angular_create(
-        create_remote_repository, answers_file, defaults, skip_answered
+        create_remote_repository, answers_file, defaults, skip_answered, ssh
     )
 
 
