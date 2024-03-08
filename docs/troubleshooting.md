@@ -52,6 +52,28 @@ to remove the currently set token. After that you can restart the environment lo
 
 ---
 
+## Docker / K3D
+
+### Failed cluster start `/<something>` is not a shared mount
+
+**Note that this issue has only been encountered by Docker Desktop users. Please consider migrating to [Colima or other alternatives as described here](https://synpulse.atlassian.net/wiki/spaces/SYN8/pages/3296067599/Using+Docker+CLI+over+Docker+Desktop).**
+
+Full error message may look something like this:
+
+```bash
+Failed Cluster Start: Failed to start server k3d-local-dev-server-0: runtime failed to start node 'k3d-local-dev-server-0': docker failed to
+start container for node 'k3d-local-dev-server-0': Error response from daemon: path /host_mnt/Users/user/.pulse8/volumes/local-dev/var/lib/kubelet/pods is
+mounted on /host_mnt but it is not a shared mount
+```
+
+To fix this:
+
+1. Update your Docker engine to the latest version
+2. (If using Docker Desktop) Add your user folder to the virtual fileshare. Example here for user `jcabresos`:
+    ![alt](./images/troubleshooting-not-a-shared-mount.png)
+
+---
+
 ## Misc
 
 ### Firefox `SEC_ERROR_UNKNOWN_ISSUER`
