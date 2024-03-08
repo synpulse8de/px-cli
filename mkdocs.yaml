@@ -1,0 +1,12 @@
+site_name: "PULSE8 Core CLI"
+site_description: "Docs on how to use the Pulse8 CLI"
+nav:
+  - Main: index.md
+  - Installation: installation.md
+  - Troubleshooting: troubleshooting.md
+plugins:
+  - techdocs-core
+  - kroki:
+      ServerURL: "http://kroki-service.apps-kroki:8000" # in-cluster URL
+      FencePrefix: ""
+      HttpMethod: POST
