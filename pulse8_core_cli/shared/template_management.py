@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import typer
+import yaml
 
 from copier import run_copy, run_update
 from rich import print
@@ -41,6 +42,7 @@ def create_template(
     answers_file: str,
     defaults: bool,
     skip_answered: bool,
+    ssh: bool,
     callback_after_git_init=None,
 ):
     template_precheck()
@@ -57,8 +59,13 @@ def create_template(
 
     tmp_dir = create_template_tmp_dir()
 
+    if ssh:
+        src_path = f"git@github.com:synpulse-group/{template_repo_name}.git"
+    else:
+        src_path = f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
+
     worker = run_copy(
-        f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git",
+        src_path,
         ".",
         unsafe=True,
         defaults=defaults,
@@ -66,8 +73,8 @@ def create_template(
         skip_answered=skip_answered,
     )
 
+    update_answers_file_src_path()
     project_id = worker.answers.user.get("project_id")
-
     rename_template_tmp_dir(tmp_dir, project_id)
 
     git_init(callback_after_git_init)
@@ -75,11 +82,26 @@ def create_template(
 
 
 def update_template(
-    answers_file: str, defaults: bool, skip_answered: bool, callback_after_update=None
+    template_repo_name: str,
+    answers_file: str,
+    defaults: bool,
+    skip_answered: bool,
+    callback_after_update=None,
 ):
     template_precheck()
+    original_answers_file_path = get_answers_file_path(answers_file)
 
     print("Pulling latest template data...")
+
+    answers_file = f"p8t_tmp_file_{str(uuid4())}.yaml"
+
+    with open(original_answers_file_path, "r") as original_file, open(
+        answers_file, "w"
+    ) as tmp_file:
+        for line in original_file:
+            tmp_file.write(line)
+
+    update_answers_file_src_path(False, template_repo_name, answers_file)
 
     run_update(
         ".",
@@ -89,6 +111,15 @@ def update_template(
         answers_file=answers_file,
         skip_answered=skip_answered,
     )
+
+    with open(original_answers_file_path, "w") as original_file, open(
+        answers_file, "r"
+    ) as tmp_file:
+        for line in tmp_file:
+            original_file.write(line)
+
+    os.remove(answers_file)
+    update_answers_file_src_path(True, template_repo_name, original_answers_file_path)
 
     if callback_after_update is not None:
         callback_after_update()
@@ -217,3 +248,57 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     print(
         "[green]GitHub release PR was successfully created. You can merge it to create a release.[/green]"
     )
+
+
+def update_answers_file_src_path(
+    remove_github_user: bool = True,
+    template_repo_name: str = None,
+    answers_file_path: str = None,
+):
+    answers_file = None
+    if answers_file_path is None:
+        answers_file_path = get_answers_file_path()
+
+    try:
+        with open(answers_file_path, "r") as stream:
+            try:
+                answers_file = yaml.unsafe_load(stream)
+            except yaml.YAMLError as exy:
+                print("[bold][red]Failed to load .copier-answers file[/red][/bold]")
+                print(exy)
+    except FileNotFoundError:
+        print("[bold][red]Could not find .copier-answers file[/red][/bold]")
+
+    if (
+        answers_file is not None
+        and answers_file_path is not None
+        and not re.match("git@github.com:", answers_file["_src_path"])
+    ):
+        if remove_github_user:
+            answers_file["_src_path"] = re.sub(
+                "//.*:.*@github\\.com/", "//github.com/", answers_file["_src_path"]
+            )
+        else:
+            env_vars = get_env_variables(silent=True)
+            github_token = env_vars[ENV_GITHUB_TOKEN]
+            github_user = env_vars[ENV_GITHUB_USER]
+            answers_file[
+                "_src_path"
+            ] = f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
+
+        with open(answers_file_path, "w") as stream:
+            try:
+                yaml.dump(answers_file, stream, default_flow_style=False)
+            except yaml.YAMLError as ex:
+                print("[bold][red]Failed to edit .copier-answers file[/red][/bold]")
+                print(ex)
+
+
+def get_answers_file_path(path: str = None):
+    if path is None:
+        if os.path.isfile(".copier-answers.yaml"):
+            return ".copier-answers.yaml"
+        elif os.path.isfile(".copier-answers.yml"):
+            return ".copier-answers.yml"
+    else:
+        return path

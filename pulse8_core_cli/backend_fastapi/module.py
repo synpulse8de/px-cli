@@ -32,12 +32,13 @@ def create(
     skip_answered: Annotated[
         bool, typer.Option(help="Skip answered questions")
     ] = False,
+    ssh: Annotated[bool, typer.Option(help="Use SSH for git remote")] = False,
 ):
     """
     Create a new backend
     """
     backend_fastapi_create(
-        create_remote_repository, answers_file, defaults, skip_answered
+        create_remote_repository, answers_file, defaults, skip_answered, ssh
     )
 
 

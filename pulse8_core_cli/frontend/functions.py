@@ -9,7 +9,11 @@ from pulse8_core_cli.shared.template_management import (
 
 
 def frontend_create(
-    create_remote_repo: bool, answers_file: str, defaults: bool, skip_answered: bool
+    create_remote_repo: bool,
+    answers_file: str,
+    defaults: bool,
+    skip_answered: bool,
+    ssh: bool,
 ):
     create_template(
         TEMPLATE_REPO_FRONTEND_NEXTJS,
@@ -17,11 +21,14 @@ def frontend_create(
         answers_file,
         defaults,
         skip_answered,
+        ssh,
     )
 
 
 def frontend_update(answers_file: str, defaults: bool, skip_answered: bool):
-    update_template(answers_file, defaults, skip_answered)
+    update_template(
+        TEMPLATE_REPO_FRONTEND_NEXTJS, answers_file, defaults, skip_answered
+    )
 
 
 def frontend_release(version: str, title: str):
