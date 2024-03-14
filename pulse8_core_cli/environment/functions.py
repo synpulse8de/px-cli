@@ -74,12 +74,6 @@ def env_create(
     env_vars = get_env_variables(silent=True)
     stop_all_env()
     print(f"preparing environment (id: {identifier})...")
-    env_volume_dir: Path = Path(f"{Path.home()}/.pulse8/volumes/{identifier}")
-    env_volume_dir.mkdir(parents=True, exist_ok=True)
-    var_lib_kubelet_pods_dir = Path(f"{env_volume_dir}/var/lib/kubelet/pods")
-    var_lib_kubelet_pods_dir.mkdir(parents=True, exist_ok=True)
-    var_lib_rancher_k3s_storage_dir = Path(f"{env_volume_dir}/var/lib/rancher/k3s/storage")
-    var_lib_rancher_k3s_storage_dir.mkdir(parents=True, exist_ok=True)
     print(f"[bold]starting environment (id: {identifier})...[/bold]")
     args = (
         "k3d",
@@ -89,8 +83,6 @@ def env_create(
         "-p443:443@loadbalancer",
         "--k3s-arg",
         "--disable=traefik@server:0",
-        f"-v{var_lib_kubelet_pods_dir}:/var/lib/kubelet/pods:shared@all",
-        f"-v{var_lib_rancher_k3s_storage_dir}:/var/lib/rancher/k3s/storage:shared@all",
         identifier,
     )
     pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1647,8 +1639,6 @@ def delete_env_setup(identifier: str) -> bool:
     try:
         env_file_path = get_environments_dir_path().joinpath(f"{identifier}.yaml")
         os.remove(env_file_path)
-        env_volume_dir: Path = Path(f"{Path.home()}/.pulse8/volumes/{identifier}")
-        shutil.rmtree(env_volume_dir)
         print(f"Removed environment setup ({identifier})")
         return True
     except (OSError, FileNotFoundError) as e:
