@@ -6,6 +6,7 @@ TEMPLATE_REPO_BACKEND_SHARED_LIB_JAVA = "pulse8-core-backend-shared-lib-template
 # frontend repositories
 TEMPLATE_REPO_FRONTEND_ANGULAR = "pulse8-core-frontend-angular-template"
 TEMPLATE_REPO_FRONTEND_NEXTJS = "pulse8-core-frontend-nextjs-template"
+TEMPLATE_REPO_FRONTEND_SHARED_LIB_REACT = "pulse8-core-frontend-shared-lib-react-template"
 
 # environment variables
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
