@@ -6,7 +6,7 @@
 
 ```bash
 # first time - authenticate
-pulse8 auth login
+pulse8 auth login firstname.lastname@synpulse.com
 
 # run the CLI
 pulse8
