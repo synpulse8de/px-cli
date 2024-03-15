@@ -14,6 +14,7 @@ from pulse8_core_cli.shared.constants import (
     ENV_JFROG_TOKEN,
     ENV_JFROG_USER,
     ENV_GITHUB_TOKEN,
+    ENV_GITHUB_GHCR_TOKEN,
 )
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
@@ -45,6 +46,8 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         github_com = config_github_cli["github.com"]
         github_user = github_com["user"]
         github_token = github_com["oauth_token"]
+        with open(Path.home().joinpath(".pulse8").joinpath("ghcr_token"), "r") as file:
+            ghcr_token = file.read()
         if not silent:
             print(f"[green]GitHub authentication set to user {github_user}[/green]")
         docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
@@ -55,6 +58,7 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         jfrog_token = docker_config_json["auths"]["synpulse.jfrog.io"]["auth"]
         jfrog_user = docker_config_json["auths"]["synpulse.jfrog.io"]["email"]
         return {
+            ENV_GITHUB_GHCR_TOKEN: ghcr_token,
             ENV_GITHUB_USER: github_user,
             ENV_GITHUB_TOKEN: github_token,
             ENV_JFROG_TOKEN: jfrog_token,

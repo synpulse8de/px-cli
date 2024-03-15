@@ -15,6 +15,7 @@ from pulse8_core_cli.shared.module import (
     get_env_variables,
     get_dotm2_dir_path,
     get_dotdocker_dir_path,
+    execute_shell_command,
 )
 
 if is_windows():
@@ -111,6 +112,17 @@ def auth_login(email: str) -> None:
         setup_npmrc(access_token, email)
     if not check_maven_ready():
         setup_maven(access_token, email)
+
+    # fetch GHCR token from Artifactory and save it to .pulse8/ghcr_token
+    print("[bold]fetching GHCR token from Artifactory...[/bold]")
+    args = ["jf", "rt", "curl", "s8-env-files/ghcr-token.txt"]
+    ghcr_token = execute_shell_command(
+        command_array=args,
+        message_failure="fetching GHCR token from Artifactory failed",
+        print_output=False,
+    )
+    with open(Path.home().joinpath(".pulse8").joinpath("ghcr_token"), "w") as f:
+        f.write(ghcr_token)
 
 
 def check_npmrc_ready() -> bool:
