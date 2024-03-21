@@ -26,7 +26,7 @@ def frontend_angular_create(
         defaults,
         skip_answered,
         ssh,
-        callback_after_git_init,
+        callback_after_git_init=callback_after_git_init,
     )
 
 

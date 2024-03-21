@@ -621,6 +621,21 @@ pluggy = ">=0.12,<2.0"
 testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "pyuac"
+version = "0.0.3"
+description = "Python library for Windows User Access Control (UAC)"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+files = [
+    {file = "pyuac-0.0.3-py2.py3-none-any.whl", hash = "sha256:cf0e1de597388744daa308e4f83019885caa0c646246a7e94713a77652701600"},
+    {file = "pyuac-0.0.3.tar.gz", hash = "sha256:fd11caf47246e0a5149284ced014c346439ae3a28c6bad0b622b239fe30d2d5b"},
+]
+
+[package.dependencies]
+decorator = "*"
+tee = "*"
+
+[[package]]
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
@@ -818,6 +833,17 @@ files = [
 ]
 
 [[package]]
+name = "tee"
+version = "0.0.3"
+description = "Python library to tee stderr/stdout temporarily"
+optional = false
+python-versions = "*"
+files = [
+    {file = "tee-0.0.3-py2-none-any.whl", hash = "sha256:16fdbb34b1e89a308094d86d2d497f5fa5ac47df9202f3dde913070d31699fad"},
+    {file = "tee-0.0.3.tar.gz", hash = "sha256:801dea18fe5046b57c26e87aa5c7ca0d1b8590cdc0e4e84158d07cdfa6628cdb"},
+]
+
+[[package]]
 name = "typer"
 version = "0.9.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
@@ -877,4 +903,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "922a883a938154410ff7cffe8782339742c63ff4f4da43b1d0ca0eb3fa559372"
+content-hash = "27d5fe52ed2facfe5657e88444d949284bc7fe8d32cf096fb1b7cfa8cbd0ca4b"

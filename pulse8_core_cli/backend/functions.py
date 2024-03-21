@@ -27,7 +27,9 @@ def backend_create(
         defaults,
         skip_answered,
         ssh,
-        callback_after_git_init,
+        callback_after_git_init=callback_after_git_init,
+        check_win_registry=True,
+        caller_command="pulse8 backend create",
     )
 
 
@@ -42,7 +44,9 @@ def backend_update(answers_file: str, defaults: bool, skip_answered: bool):
         answers_file,
         defaults,
         skip_answered,
-        callback_after_update,
+        callback_after_update=callback_after_update,
+        check_win_registry=True,
+        caller_command="pulse8 backend update",
     )
 
 

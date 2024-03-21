@@ -21,9 +21,15 @@ from pulse8_core_cli.shared.module import (
     git_init,
     git_create_remote,
 )
+from pulse8_core_cli.shared.platform_discovery import is_windows
+
+if is_windows():
+    from pulse8_core_cli.shared.windows_functions import setup_win_registry_admin
 
 
-def template_precheck():
+def template_precheck(check_win_registry: bool, caller_command: str = None):
+    if check_win_registry and is_windows():
+        setup_win_registry_admin(caller_command)
     print("[bold]running template precheck...[/bold]")
     try:
         env_vars = get_env_variables()
@@ -44,8 +50,10 @@ def create_template(
     skip_answered: bool,
     ssh: bool,
     callback_after_git_init=None,
+    check_win_registry: bool = False,
+    caller_command: str = None,
 ):
-    template_precheck()
+    template_precheck(check_win_registry, caller_command=caller_command)
     env_vars = get_env_variables(silent=True)
     github_token = env_vars[ENV_GITHUB_TOKEN]
     github_user = env_vars[ENV_GITHUB_USER]
@@ -87,8 +95,10 @@ def update_template(
     defaults: bool,
     skip_answered: bool,
     callback_after_update=None,
+    check_win_registry: bool = False,
+    caller_command: str = None,
 ):
-    template_precheck()
+    template_precheck(check_win_registry, caller_command=caller_command)
     original_answers_file_path = get_answers_file_path(answers_file)
 
     print("Pulling latest template data...")
