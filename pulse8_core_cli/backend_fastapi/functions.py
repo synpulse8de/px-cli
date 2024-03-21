@@ -26,7 +26,7 @@ def backend_fastapi_create(
         defaults,
         skip_answered,
         ssh,
-        callback_after_git_init,
+        callback_after_git_init=callback_after_git_init,
     )
 
 
@@ -40,7 +40,7 @@ def backend_fastapi_update(answers_file: str, defaults: bool, skip_answered: boo
         answers_file,
         defaults,
         skip_answered,
-        callback_after_update,
+        callback_after_update=callback_after_update,
     )
 
 

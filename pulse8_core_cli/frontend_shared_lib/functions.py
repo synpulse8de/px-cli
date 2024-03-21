@@ -27,7 +27,7 @@ def frontend_shared_lib_create(
         defaults,
         skip_answered,
         ssh,
-        callback_after_git_init,
+        callback_after_git_init=callback_after_git_init,
     )
 
 
@@ -42,7 +42,7 @@ def frontend_shared_lib_update(answers_file: str, defaults: bool, skip_answered:
         answers_file,
         defaults,
         skip_answered,
-        callback_after_update,
+        callback_after_update=callback_after_update,
     )
 
 

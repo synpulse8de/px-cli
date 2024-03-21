@@ -9,16 +9,12 @@ from pathlib import Path
 import typer
 from rich import print
 
-from pulse8_core_cli.shared.platform_discovery import is_windows
 from pulse8_core_cli.shared.module import (
     validate_email,
     get_env_variables,
     get_dotm2_dir_path,
     get_dotdocker_dir_path,
 )
-
-if is_windows():
-    from pulse8_core_cli.auth.windows_functions import adjust_windows_registry
 
 
 def auth_login(email: str) -> None:
@@ -45,9 +41,6 @@ def auth_login(email: str) -> None:
             "[link=https://support.synpulse.com/support/catalog/items/102]JFrog[/link]"
         )
         exit(1)
-
-    if is_windows():
-        adjust_windows_registry()
 
     print("[bold]authenticate against github.com...[bold]")
     os.system(
