@@ -125,7 +125,7 @@ def get_dotdocker_dir_path() -> Path:
 def get_dotdocker_config_file_path() -> Path:
     docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
     if not docker_config_json_path.exists():
-        with open(docker_config_json_path, 'w') as file:
+        with open(docker_config_json_path, "w") as file:
             file.write("{}")
     return docker_config_json_path
 
