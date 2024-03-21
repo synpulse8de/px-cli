@@ -33,7 +33,7 @@ from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_INFRA_SPARK,
     KEY_CHOICES_INFRA_NIFI,
     KEY_CHOICES_INFRA_MARIADB,
-    KEY_CHOICES_INFRA_CLOUDSERVER,
+    KEY_CHOICES_INFRA_CLOUDSERVER, KEY_CHOICES_INFRA_PINOT,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -662,6 +662,50 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed MariaDB using Flux[/green]")
             print(res[0].decode("utf8"))
+        if KEY_CHOICES_INFRA_PINOT in infra:
+            print("Installing Pinot using Flux...")
+            args = (
+                "flux",
+                "create",
+                "source",
+                "git",
+                "pulse8-core-env-pinot-repo",
+                "--url=https://github.com/synpulse-group/pulse8-core-env-pinot.git",
+                "--branch=main",
+                "--secret-ref=github-token",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(
+                    f"[bold red]Failed to install Pinot git source using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
+                exit(1)
+            print(f"[green]Installed Pinot git source using Flux[/green]")
+            print(res[0].decode("utf8"))
+            args = (
+                "flux",
+                "create",
+                "kustomization",
+                "pulse8-core-env-pinot",
+                "--source=GitRepository/pulse8-core-env-pinot-repo",
+                "--interval=1m",
+                "--prune=true",
+                "--target-namespace=default",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Pinot using Flux[/bold red]")
+                print(res[1].decode("utf8"))
+                exit(1)
+            print(f"[green]Installed Pinot using Flux[/green]")
+            print(res[0].decode("utf8"))
         if KEY_CHOICES_INFRA_TEEDY in infra:
             print("Installing Teedy using Flux...")
             args = (
@@ -1044,6 +1088,49 @@ def env_install_choices(
                 print(f"[green]Uninstalled MariaDB using Flux[/green]")
                 print(res[0].decode("utf8"))
             if (
+                KEY_CHOICES_INFRA_PINOT not in choices_infra
+                and KEY_CHOICES_INFRA_PINOT in choices_infra_old
+            ):
+                print("Uninstalling Pinot using Flux...")
+                args = (
+                    "flux",
+                    "delete",
+                    "source",
+                    "git",
+                    "pulse8-core-env-pinot-repo",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(
+                        f"[bold red]Failed to uninstall Pinot git source using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
+                    exit(1)
+                print(res[0].decode("utf8"))
+                args = (
+                    "flux",
+                    "delete",
+                    "kustomization",
+                    "pulse8-core-env-pinot",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(
+                        f"[bold red]Failed to uninstall Pinot using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
+                    exit(1)
+                print(f"[green]Uninstalled Pinot using Flux[/green]")
+                print(res[0].decode("utf8"))
+            if (
                 KEY_CHOICES_INFRA_TEEDY not in choices_infra
                 and KEY_CHOICES_INFRA_TEEDY in choices_infra_old
             ):
@@ -1246,6 +1333,7 @@ def get_questions(
             # not supported on arm64 - maybe bring proxy solution in place
             # ("Exasol", KEY_CHOICES_INFRA_EXASOL),
             ("MariaDB", KEY_CHOICES_INFRA_MARIADB),
+            ("Pinot", KEY_CHOICES_INFRA_PINOT),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
@@ -1259,6 +1347,7 @@ def get_questions(
             ("Redis", KEY_CHOICES_INFRA_REDIS),
             ("Exasol", KEY_CHOICES_INFRA_EXASOL),
             ("MariaDB", KEY_CHOICES_INFRA_MARIADB),
+            ("Pinot", KEY_CHOICES_INFRA_PINOT),
             ("Teedy", KEY_CHOICES_INFRA_TEEDY),
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
@@ -1332,6 +1421,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_EXASOL)
             if KEY_CHOICES_INFRA_MARIADB in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_MARIADB)
+            if KEY_CHOICES_INFRA_PINOT in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_PINOT)
             if KEY_CHOICES_INFRA_TEEDY in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_TEEDY)
             if KEY_CHOICES_INFRA_KEYCLOAK in choices_infra:
