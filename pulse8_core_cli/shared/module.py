@@ -50,7 +50,7 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
             ghcr_token = file.read()
         if not silent:
             print(f"[green]GitHub authentication set to user {github_user}[/green]")
-        docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
+        docker_config_json_path = get_dotdocker_config_file_path()
         docker_config_json_raw: str
         with open(docker_config_json_path) as docker_config_json_file:
             docker_config_json_raw = docker_config_json_file.read()
@@ -120,6 +120,14 @@ def get_dotdocker_dir_path() -> Path:
     docker_dir: Path = Path.home().joinpath(".docker")
     docker_dir.mkdir(parents=True, exist_ok=True)
     return docker_dir
+
+
+def get_dotdocker_config_file_path() -> Path:
+    docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
+    if not docker_config_json_path.exists():
+        with open(docker_config_json_path, 'w') as file:
+            file.write("{}")
+    return docker_config_json_path
 
 
 def get_dotm2_dir_path() -> Path:
