@@ -56,6 +56,4 @@ def get_win_registry_value_long_paths_enabled():
         0,
         winreg.KEY_READ,
     )
-    return winreg.QueryValueEx(
-        reg_file_system_key_read, "LongPathsEnabled"
-    )[0]
+    return winreg.QueryValueEx(reg_file_system_key_read, "LongPathsEnabled")[0]

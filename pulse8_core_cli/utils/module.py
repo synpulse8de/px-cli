@@ -3,7 +3,7 @@ import typer
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
 if is_windows():
-    from pulse8_core_cli.auth.windows_functions import setup_win_registry
+    from pulse8_core_cli.shared.windows_functions import setup_win_registry
 
 app = typer.Typer()
 

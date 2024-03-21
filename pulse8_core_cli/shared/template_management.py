@@ -24,7 +24,7 @@ from pulse8_core_cli.shared.module import (
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
 if is_windows():
-    from pulse8_core_cli.auth.windows_functions import setup_win_registry_admin
+    from pulse8_core_cli.shared.windows_functions import setup_win_registry_admin
 
 
 def template_precheck(check_win_registry: bool, caller_command: str = None):
