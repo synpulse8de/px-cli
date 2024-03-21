@@ -13,7 +13,8 @@ from pulse8_core_cli.shared.module import (
     validate_email,
     get_env_variables,
     get_dotm2_dir_path,
-    get_dotdocker_dir_path,
+    get_dotdocker_config_file_path,
+    execute_shell_command,
 )
 
 
@@ -74,7 +75,7 @@ def auth_login(email: str) -> None:
     docker_auth_raw_bytes = docker_auth_raw.encode("utf8")
     docker_auth_encoded_bytes = base64.b64encode(docker_auth_raw_bytes)
     docker_auth_encoded = docker_auth_encoded_bytes.decode("utf8")
-    docker_config_json_path = get_dotdocker_dir_path().joinpath("config.json")
+    docker_config_json_path = get_dotdocker_config_file_path()
     with open(docker_config_json_path) as docker_config_json_file:
         docker_config_json_raw = docker_config_json_file.read()
     docker_config_json = json.loads(docker_config_json_raw)
@@ -99,6 +100,18 @@ def auth_login(email: str) -> None:
     docker_config_json_auths_spjfrog["email"] = email
     with open(docker_config_json_path, "w") as docker_config_json_file:
         docker_config_json_file.write(json.dumps(docker_config_json, indent=4))
+
+    # fetch GHCR token from Artifactory and save it to .pulse8/ghcr_token
+    print("[bold]fetching GHCR token from Artifactory...[/bold]")
+    args = ["jf", "rt", "curl", "s8-env-files/ghcr-token.txt"]
+    ghcr_token = execute_shell_command(
+        command_array=args,
+        message_failure="fetching GHCR token from Artifactory failed",
+        print_output=False,
+    )
+    with open(Path.home().joinpath(".pulse8").joinpath("ghcr_token"), "w") as f:
+        f.write(ghcr_token)
+
     env_vars = get_env_variables(silent=True)
     if not check_npmrc_ready():
         setup_npmrc(access_token, email)
