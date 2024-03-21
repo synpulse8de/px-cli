@@ -10,6 +10,7 @@ TEMPLATE_REPO_FRONTEND_SHARED_LIB_REACT = "pulse8-core-frontend-shared-lib-react
 
 # environment variables
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
+ENV_GITHUB_GHCR_TOKEN = "GITHUB_GHCR_TOKEN"  # general, non-user-specific token for GHCR
 ENV_GITHUB_USER = "GITHUB_USER"
 ENV_JFROG_TOKEN = "JFROG_TOKEN"
 ENV_JFROG_USER = "JFROG_USER"

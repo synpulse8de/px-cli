@@ -40,6 +40,7 @@ from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_USER,
     ENV_JFROG_TOKEN,
     ENV_JFROG_USER,
+    ENV_GITHUB_GHCR_TOKEN,
 )
 from pulse8_core_cli.shared.module import (
     get_certificates_dir_path,
@@ -53,6 +54,7 @@ def env_precheck():
     print("[bold]running environment precheck...[/bold]")
     try:
         env_vars = get_env_variables()
+        github_ghcr_token = env_vars[ENV_GITHUB_GHCR_TOKEN]
         github_token = env_vars[ENV_GITHUB_TOKEN]
         github_user = env_vars[ENV_GITHUB_USER]
         jfrog_token = env_vars[ENV_JFROG_TOKEN]
@@ -175,12 +177,7 @@ def env_create(
     ghcr_dockerconfigjson["auths"] = dict()
     ghcr_dockerconfigjson["auths"]["ghcr.io"] = dict()
     ghcr_credentials_encoded = base64.b64encode(
-        # thanks GitHub - this is the code how it should be
-        # bytes(f"{env_vars[ENV_GITHUB_USER]}:{env_vars[ENV_GITHUB_TOKEN]}", "ascii")
-        # thanks GitHub - this is a workaround
-        bytes(
-            "antti-viitala_SYNPULSE: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", "ascii"
-        )
+        bytes(env_vars[ENV_GITHUB_GHCR_TOKEN], "ascii")
     )
     ghcr_dockerconfigjson["auths"]["ghcr.io"]["auth"] = ghcr_credentials_encoded.decode(
         "utf8"
