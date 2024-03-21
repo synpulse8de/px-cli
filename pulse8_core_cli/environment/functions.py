@@ -32,6 +32,7 @@ from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT,
     KEY_CHOICES_INFRA_SPARK,
     KEY_CHOICES_INFRA_NIFI,
+    KEY_CHOICES_INFRA_SUPERSET,
     KEY_CHOICES_INFRA_MARIADB,
     KEY_CHOICES_INFRA_CLOUDSERVER, KEY_CHOICES_INFRA_PINOT,
 )
@@ -839,6 +840,30 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Apache NiFi using Flux[/green]")
             print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_SUPERSET in infra:
+            print("Installing Apache Superset using Flux...")
+            args = ("flux", "create", "source", "git", "pulse8-core-env-superset-repo",
+                    "--url=https://github.com/synpulse-group/pulse8-core-env-superset.git", "--branch=main",
+                    "--secret-ref=github-token")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache Superset git source using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache Superset git source using Flux[/green]")
+            print(res[0].decode('utf8'))
+            args = ("flux", "create", "kustomization", "pulse8-core-env-superset",
+                    "--source=GitRepository/pulse8-core-env-superset-repo", "--interval=1m", "--prune=true",
+                    "--target-namespace=default")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache Superset using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache Superset using Flux[/green]")
+            print(res[0].decode('utf8'))
         if KEY_CHOICES_INFRA_CLOUDSERVER in infra:
             print("Installing Zenko Cloudserver (S3) using Flux...")
             args = ("flux", "create", "source", "git", "pulse8-core-env-cloudserver-repo",
@@ -1249,6 +1274,25 @@ def env_install_choices(
                     exit(1)
                 print(f"[green]Uninstalled Apache NiFi using Flux[/green]")
                 print(res[0].decode('utf8'))
+            if KEY_CHOICES_INFRA_SUPERSET not in choices_infra and KEY_CHOICES_INFRA_SUPERSET in choices_infra_old:
+                print("Uninstalling Apache Superset using Flux...")
+                args = ("flux", "delete", "source", "git", "pulse8-core-env-superset-repo", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache Superset git source using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(res[0].decode('utf8'))
+                args = ("flux", "delete", "kustomization", "pulse8-core-env-superset", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache Superset using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(f"[green]Uninstalled Apache Superset using Flux[/green]")
+                print(res[0].decode('utf8'))
             if KEY_CHOICES_INFRA_CLOUDSERVER not in choices_infra and KEY_CHOICES_INFRA_CLOUDSERVER in choices_infra_old:
                 print("Uninstalling Zenko Cloudserver (S3) using Flux...")
                 args = ("flux", "delete", "source", "git", "pulse8-core-env-cloudserver-repo", "-s")
@@ -1335,6 +1379,7 @@ def get_questions(
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
             ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
+            ("Apache Superset", KEY_CHOICES_INFRA_SUPERSET),
             ("Zenko Cloudserver (S3)", KEY_CHOICES_INFRA_CLOUDSERVER),
         ]
     else:
@@ -1349,6 +1394,7 @@ def get_questions(
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
             ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
+            ("Apache Superset", KEY_CHOICES_INFRA_SUPERSET),
             ("Zenko Cloudserver (S3)", KEY_CHOICES_INFRA_CLOUDSERVER),
         ]
     questions = [
@@ -1428,6 +1474,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_SPARK)
             if KEY_CHOICES_INFRA_NIFI in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_NIFI)
+            if KEY_CHOICES_INFRA_SUPERSET in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_SUPERSET)
             if KEY_CHOICES_INFRA_CLOUDSERVER in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_CLOUDSERVER)
         if KEY_CHOICES_SERVICES in setup:
