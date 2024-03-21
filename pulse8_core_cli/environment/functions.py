@@ -32,6 +32,7 @@ from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT,
     KEY_CHOICES_INFRA_SPARK,
     KEY_CHOICES_INFRA_NIFI,
+    KEY_CHOICES_INFRA_AIRFLOW,
     KEY_CHOICES_INFRA_SUPERSET,
     KEY_CHOICES_INFRA_MARIADB,
     KEY_CHOICES_INFRA_CLOUDSERVER, KEY_CHOICES_INFRA_PINOT,
@@ -843,6 +844,30 @@ def env_install_choices(
                 exit(1)
             print(f"[green]Installed Apache NiFi using Flux[/green]")
             print(res[0].decode('utf8'))
+        if KEY_CHOICES_INFRA_AIRFLOW in infra:
+            print("Installing Apache Airflow using Flux...")
+            args = ("flux", "create", "source", "git", "pulse8-core-env-airflow-repo",
+                    "--url=https://github.com/synpulse-group/pulse8-core-env-airflow.git", "--branch=main",
+                    "--secret-ref=github-token")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache Airflow git source using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache Airflow git source using Flux[/green]")
+            print(res[0].decode('utf8'))
+            args = ("flux", "create", "kustomization", "pulse8-core-env-airflow",
+                    "--source=GitRepository/pulse8-core-env-airflow-repo", "--interval=1m", "--prune=true",
+                    "--target-namespace=default")
+            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res: tuple[bytes, bytes] = pipe.communicate()
+            if pipe.returncode == 1:
+                print(f"[bold red]Failed to install Apache Airflow using Flux[/bold red]")
+                print(res[1].decode('utf8'))
+                exit(1)
+            print(f"[green]Installed Apache Airflow using Flux[/green]")
+            print(res[0].decode('utf8'))
         if KEY_CHOICES_INFRA_SUPERSET in infra:
             print("Installing Apache Superset using Flux...")
             args = ("flux", "create", "source", "git", "pulse8-core-env-superset-repo",
@@ -1277,6 +1302,25 @@ def env_install_choices(
                     exit(1)
                 print(f"[green]Uninstalled Apache NiFi using Flux[/green]")
                 print(res[0].decode('utf8'))
+            if KEY_CHOICES_INFRA_AIRFLOW not in choices_infra and KEY_CHOICES_INFRA_AIRFLOW in choices_infra_old:
+                print("Uninstalling Apache Airflow using Flux...")
+                args = ("flux", "delete", "source", "git", "pulse8-core-env-airflow-repo", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache Airflow git source using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(res[0].decode('utf8'))
+                args = ("flux", "delete", "kustomization", "pulse8-core-env-airflow", "-s")
+                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res: tuple[bytes, bytes] = pipe.communicate()
+                if pipe.returncode == 1:
+                    print(f"[bold red]Failed to uninstall Apache Airflow using Flux[/bold red]")
+                    print(res[1].decode('utf8'))
+                    exit(1)
+                print(f"[green]Uninstalled Apache Airflow using Flux[/green]")
+                print(res[0].decode('utf8'))
             if KEY_CHOICES_INFRA_SUPERSET not in choices_infra and KEY_CHOICES_INFRA_SUPERSET in choices_infra_old:
                 print("Uninstalling Apache Superset using Flux...")
                 args = ("flux", "delete", "source", "git", "pulse8-core-env-superset-repo", "-s")
@@ -1382,6 +1426,7 @@ def get_questions(
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
             ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
+            ("Apache Airflow", KEY_CHOICES_INFRA_AIRFLOW),
             ("Apache Superset", KEY_CHOICES_INFRA_SUPERSET),
             ("Zenko Cloudserver (S3)", KEY_CHOICES_INFRA_CLOUDSERVER),
         ]
@@ -1397,6 +1442,7 @@ def get_questions(
             ("Keycloak", KEY_CHOICES_INFRA_KEYCLOAK),
             ("Apache Spark", KEY_CHOICES_INFRA_SPARK),
             ("Apache NiFi", KEY_CHOICES_INFRA_NIFI),
+            ("Apache Airflow", KEY_CHOICES_INFRA_AIRFLOW),
             ("Apache Superset", KEY_CHOICES_INFRA_SUPERSET),
             ("Zenko Cloudserver (S3)", KEY_CHOICES_INFRA_CLOUDSERVER),
         ]
@@ -1477,6 +1523,8 @@ def get_preselection_from_setup(setup: dict) -> (list, list):
                 preselection_infra.append(KEY_CHOICES_INFRA_SPARK)
             if KEY_CHOICES_INFRA_NIFI in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_NIFI)
+            if KEY_CHOICES_INFRA_AIRFLOW in choices_infra:
+                preselection_infra.append(KEY_CHOICES_INFRA_AIRFLOW)
             if KEY_CHOICES_INFRA_SUPERSET in choices_infra:
                 preselection_infra.append(KEY_CHOICES_INFRA_SUPERSET)
             if KEY_CHOICES_INFRA_CLOUDSERVER in choices_infra:
