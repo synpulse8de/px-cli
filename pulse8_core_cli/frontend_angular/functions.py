@@ -36,5 +36,7 @@ def frontend_angular_update(answers_file: str, defaults: bool, skip_answered: bo
     )
 
 
-def frontend_angular_release(version: str, title: str, major: bool, minor: bool, patch: bool):
+def frontend_angular_release(
+    version: str, title: str, major: bool, minor: bool, patch: bool
+):
     release_template(version, title, major, minor, patch, PNPM)

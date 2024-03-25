@@ -44,5 +44,7 @@ def backend_fastapi_update(answers_file: str, defaults: bool, skip_answered: boo
     )
 
 
-def backend_fastapi_release(version: str, title: str, major: bool, minor: bool, patch: bool):
+def backend_fastapi_release(
+    version: str, title: str, major: bool, minor: bool, patch: bool
+):
     release_template(version, title, major, minor, patch, POETRY)

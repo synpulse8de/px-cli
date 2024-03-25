@@ -1,6 +1,9 @@
 import os
 
-from pulse8_core_cli.shared.constants import TEMPLATE_REPO_BACKEND_SHARED_LIB_JAVA, MAVEN
+from pulse8_core_cli.shared.constants import (
+    TEMPLATE_REPO_BACKEND_SHARED_LIB_JAVA,
+    MAVEN,
+)
 from pulse8_core_cli.shared.module import get_maven_wrapper_executable
 from pulse8_core_cli.shared.template_management import (
     create_template,
@@ -50,5 +53,7 @@ def backend_shared_lib_update(answers_file: str, defaults: bool, skip_answered: 
     )
 
 
-def backend_shared_lib_release(version: str, title: str, major: bool, minor: bool, patch: bool):
+def backend_shared_lib_release(
+    version: str, title: str, major: bool, minor: bool, patch: bool
+):
     release_template(version, title, major, minor, patch, MAVEN)

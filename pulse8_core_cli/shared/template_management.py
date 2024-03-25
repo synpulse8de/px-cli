@@ -12,14 +12,18 @@ from uuid import uuid4
 
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_USER,
-    ENV_GITHUB_TOKEN, MAVEN, POETRY, PNPM,
+    ENV_GITHUB_TOKEN,
+    MAVEN,
+    POETRY,
+    PNPM,
 )
 from pulse8_core_cli.shared.module import (
     get_env_variables,
     create_template_tmp_dir,
     rename_template_tmp_dir,
     git_init,
-    git_create_remote, get_maven_wrapper_executable,
+    git_create_remote,
+    get_maven_wrapper_executable,
 )
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
@@ -137,7 +141,14 @@ def update_template(
     print("[green]Project successfully updated.[/green]")
 
 
-def release_template(version: str, title: str, major: bool, minor: bool, patch: bool, versioning_tool: str):
+def release_template(
+    version: str,
+    title: str,
+    major: bool,
+    minor: bool,
+    patch: bool,
+    versioning_tool: str,
+):
     unreleased_header = "##[unreleased]"
     unreleased_header_idx = -1
 
@@ -216,13 +227,18 @@ def release_template(version: str, title: str, major: bool, minor: bool, patch: 
 
     print(f"Setting release version {version}")
 
-    release_view_pipe = subprocess.Popen(["gh", "release", "view", f"v{version}"], stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE)
+    release_view_pipe = subprocess.Popen(
+        ["gh", "release", "view", f"v{version}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     release_view_res: tuple[bytes, bytes] = release_view_pipe.communicate()
     if release_view_pipe.returncode == 1:
         release_view_stderr = release_view_res[1].decode("utf8")
         if release_view_stderr.strip() != "release not found":
-            print(f"[bold red]Failed to check if this release already exists: {release_view_stderr}[/bold red]")
+            print(
+                f"[bold red]Failed to check if this release already exists: {release_view_stderr}[/bold red]"
+            )
             exit(1)
     else:
         print(

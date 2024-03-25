@@ -1,6 +1,9 @@
 import os
 
-from pulse8_core_cli.shared.constants import TEMPLATE_REPO_FRONTEND_SHARED_LIB_REACT, PNPM
+from pulse8_core_cli.shared.constants import (
+    TEMPLATE_REPO_FRONTEND_SHARED_LIB_REACT,
+    PNPM,
+)
 from pulse8_core_cli.shared.template_management import (
     create_template,
     update_template,
@@ -46,5 +49,7 @@ def frontend_shared_lib_update(answers_file: str, defaults: bool, skip_answered:
     )
 
 
-def frontend_shared_lib_release(version: str, title: str, major: bool, minor: bool, patch: bool):
+def frontend_shared_lib_release(
+    version: str, title: str, major: bool, minor: bool, patch: bool
+):
     release_template(version, title, major, minor, patch, PNPM)
