@@ -20,3 +20,8 @@ ENV_JFROG_USER = "JFROG_USER"
 # repository types
 REPOSITORY_PRIVATE = "private"
 REPOSITORY_INTERNAL = "internal"
+
+# dependency management tools
+MAVEN = "maven"
+POETRY = "poetry"
+PNPM = "pnpm"
