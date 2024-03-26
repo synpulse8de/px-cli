@@ -46,7 +46,7 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         github_com = config_github_cli["github.com"]
         github_user = github_com["user"]
         github_token = github_com["oauth_token"]
-        with open(Path.home().joinpath(".pulse8").joinpath("ghcr_token"), "r") as file:
+        with open(get_ghcrtoken_path(), "r") as file:
             ghcr_token = file.read()
         if not silent:
             print(f"[green]GitHub authentication set to user {github_user}[/green]")
@@ -104,14 +104,20 @@ def git_create_remote(
         print("[bold green]Committed generated project. Happy coding![/bold green]")
 
 
+def get_cli_dir() -> Path:
+    cli_dir: Path = Path(f"{Path.home()}/.pulse8")
+    cli_dir.mkdir(parents=True, exist_ok=True)
+    return cli_dir
+
+
 def get_certificates_dir_path() -> Path:
-    certificates_dir: Path = Path(f"{Path.home()}/.pulse8/certificates")
+    certificates_dir: Path = get_cli_dir().joinpath("certificates")
     certificates_dir.mkdir(parents=True, exist_ok=True)
     return certificates_dir
 
 
 def get_environments_dir_path() -> Path:
-    environments_dir: Path = Path(f"{Path.home()}/.pulse8/.environments")
+    environments_dir: Path = get_cli_dir().joinpath("environments")
     environments_dir.mkdir(parents=True, exist_ok=True)
     return environments_dir
 
@@ -120,6 +126,10 @@ def get_dotdocker_dir_path() -> Path:
     docker_dir: Path = Path.home().joinpath(".docker")
     docker_dir.mkdir(parents=True, exist_ok=True)
     return docker_dir
+
+
+def get_ghcrtoken_path() -> Path:
+    return get_cli_dir().joinpath("ghcr_token")
 
 
 def get_dotdocker_config_file_path() -> Path:
