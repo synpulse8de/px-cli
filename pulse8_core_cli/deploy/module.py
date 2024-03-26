@@ -25,14 +25,23 @@ app = typer.Typer()
 
 
 @app.command()
-def create(project_id: Annotated[str, typer.Option(help="ID of project")] = None,
-           branch: Annotated[str, typer.Option(help="Repository branch to deploy from")] = None,
-           env: Annotated[str, typer.Option(help="Environment to deploy to")] = None,
-           deploy_port: Annotated[str, typer.Option(help="Port of deployment")] = None,
-           ingress_path: Annotated[str, typer.Option(help="Ingress path of deployment")] = None,
-           env_var_file_path: Annotated[str, typer.Option(help="Path to .env file with environment variables")] = None,
-           env_secret_file_path: Annotated[str, typer.Option(help="Path to .env file with environment secrets")] = None
-           ):
+def create(
+    project_id: Annotated[str, typer.Option(help="ID of project")] = None,
+    branch: Annotated[
+        str, typer.Option(help="Repository branch to deploy from")
+    ] = None,
+    env: Annotated[str, typer.Option(help="Environment to deploy to")] = None,
+    deploy_port: Annotated[str, typer.Option(help="Port of deployment")] = None,
+    ingress_path: Annotated[
+        str, typer.Option(help="Ingress path of deployment")
+    ] = None,
+    env_var_file_path: Annotated[
+        str, typer.Option(help="Path to .env file with environment variables")
+    ] = None,
+    env_secret_file_path: Annotated[
+        str, typer.Option(help="Path to .env file with environment secrets")
+    ] = None,
+):
     """
     Create a deployment manifest for the project in your current working directory.
     """
@@ -46,8 +55,10 @@ def create(project_id: Annotated[str, typer.Option(help="ID of project")] = None
 
     # project inputs
     if project_id is None:
-        project_id = Prompt.ask("What is the [bold]ID[/bold] of your project? "
-                                "(name of project in machine-friendly format e.g. 'my-project-backend')")
+        project_id = Prompt.ask(
+            "What is the [bold]ID[/bold] of your project? "
+            "(name of project in machine-friendly format e.g. 'my-project-backend')"
+        )
     if env is None:
         env = Prompt.ask(
             "What [bold]environment[/bold] do you want to deploy to?", default="dev"
@@ -119,9 +130,7 @@ def create(project_id: Annotated[str, typer.Option(help="ID of project")] = None
     # save into current directory, under k8s/helm/{{envname}}
     current_helm_dir = Path(".") / "k8s" / "helm"
     current_helm_dir.mkdir(parents=True, exist_ok=True)
-    with open(
-        current_helm_dir / f"{project_id}-{env}.yaml", "w"
-    ) as f:
+    with open(current_helm_dir / f"{project_id}-{env}.yaml", "w") as f:
         [
             f.write(f"# {x}\n")
             for x in [
