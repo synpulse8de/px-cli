@@ -35,7 +35,8 @@ from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_INFRA_AIRFLOW,
     KEY_CHOICES_INFRA_SUPERSET,
     KEY_CHOICES_INFRA_MARIADB,
-    KEY_CHOICES_INFRA_CLOUDSERVER, KEY_CHOICES_INFRA_PINOT,
+    KEY_CHOICES_INFRA_CLOUDSERVER,
+    KEY_CHOICES_INFRA_PINOT,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -97,7 +98,9 @@ def env_create(
         exit(1)
     print(f"[green]started environment (id: {identifier})[/green]")
     print(res[0].decode("utf8"))
-    print(f"[bold]starting post creation steps for environment (id: {identifier})...[/bold]")
+    print(
+        f"[bold]starting post creation steps for environment (id: {identifier})...[/bold]"
+    )
     execute_shell_command(
         command_array=[
             "kubectl",
@@ -106,10 +109,10 @@ def env_create(
             "rollout",
             "status",
             "deployment",
-            "coredns"
+            "coredns",
         ],
         message_failure=f"[bold red]failed to wait for coredns init[/bold red]",
-        message_success=f"[green]coredns init[/green]"
+        message_success=f"[green]coredns init[/green]",
     )
     configmap_coredns_source = execute_shell_command(
         command_array=[
@@ -120,10 +123,10 @@ def env_create(
             "configmap",
             "coredns",
             "-o",
-            "yaml"
+            "yaml",
         ],
         message_failure=f"[bold red]failed read coredns configuration[/bold red]",
-        message_success=f"[green]read coredns configuration[/green]"
+        message_success=f"[green]read coredns configuration[/green]",
     )
     configmap_coredns_source_path = "configmap_coredns_source.yaml"
     with open(configmap_coredns_source_path, "w") as configmap_coredns_source_file:
@@ -133,7 +136,9 @@ def env_create(
             "        rewrite stop {\n"
             "          name regex (.*\.)?local\.synpulse8\.com host.k3d.internal\n"
             "        }\n"
-            "        kubernetes", 1)
+            "        kubernetes",
+            1,
+        )
         configmap_coredns_source_file.write(configmap_coredns_source)
     execute_shell_command(
         command_array=[
@@ -145,7 +150,7 @@ def env_create(
             configmap_coredns_source_path,
         ],
         message_failure=f"[bold red]failed to apply new coredns configuration[/bold red]",
-        message_success=f"[green]applied new coredns configuration[/green]"
+        message_success=f"[green]applied new coredns configuration[/green]",
     )
     execute_shell_command(
         command_array=[
@@ -158,7 +163,7 @@ def env_create(
             "coredns",
         ],
         message_failure=f"[bold red]failed to restart coredns deployment[/bold red]",
-        message_success=f"[green]restarted coredns deployment[/green]"
+        message_success=f"[green]restarted coredns deployment[/green]",
     )
     os.remove(configmap_coredns_source_path)
     print(f"installing flux into environment (id: {identifier})...")
@@ -249,7 +254,7 @@ def env_create(
             "--type=kubernetes.io/dockerconfigjson",
         ],
         message_failure=f"[bold red]failed installing pull secrets (synpulse.jfrog.io/flux-system) into environment (id: {identifier})[/bold red]",
-        message_success=f"[green]installed pull secrets (synpulse.jfrog.io/flux-system) into environment (id: {identifier})[/green]"
+        message_success=f"[green]installed pull secrets (synpulse.jfrog.io/flux-system) into environment (id: {identifier})[/green]",
     )
     print(
         f"[green]installed pull secrets (ghcr.io, synpulse.jfrog.io) into environment (id: {identifier})[/green]"
@@ -792,127 +797,235 @@ def env_install_choices(
                 print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Keycloak using Flux[/green]")
-            print(res[0].decode('utf8'))
+            print(res[0].decode("utf8"))
         if KEY_CHOICES_INFRA_SPARK in infra:
             print("Installing Apache Spark using Flux...")
-            args = ("flux", "create", "source", "git", "pulse8-core-env-spark-repo",
-                    "--url=https://github.com/synpulse-group/pulse8-core-env-spark.git", "--branch=main",
-                    "--secret-ref=github-token")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args = (
+                "flux",
+                "create",
+                "source",
+                "git",
+                "pulse8-core-env-spark-repo",
+                "--url=https://github.com/synpulse-group/pulse8-core-env-spark.git",
+                "--branch=main",
+                "--secret-ref=github-token",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Apache Spark git source using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Apache Spark git source using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache Spark git source using Flux[/green]")
-            print(res[0].decode('utf8'))
-            args = ("flux", "create", "kustomization", "pulse8-core-env-spark",
-                    "--source=GitRepository/pulse8-core-env-spark-repo", "--interval=1m", "--prune=true",
-                    "--target-namespace=default")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(res[0].decode("utf8"))
+            args = (
+                "flux",
+                "create",
+                "kustomization",
+                "pulse8-core-env-spark",
+                "--source=GitRepository/pulse8-core-env-spark-repo",
+                "--interval=1m",
+                "--prune=true",
+                "--target-namespace=default",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Apache Spark using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache Spark using Flux[/green]")
-            print(res[0].decode('utf8'))
+            print(res[0].decode("utf8"))
         if KEY_CHOICES_INFRA_NIFI in infra:
             print("Installing Apache NiFi using Flux...")
-            args = ("flux", "create", "source", "git", "pulse8-core-env-nifi-repo",
-                    "--url=https://github.com/synpulse-group/pulse8-core-env-nifi.git", "--branch=main",
-                    "--secret-ref=github-token")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args = (
+                "flux",
+                "create",
+                "source",
+                "git",
+                "pulse8-core-env-nifi-repo",
+                "--url=https://github.com/synpulse-group/pulse8-core-env-nifi.git",
+                "--branch=main",
+                "--secret-ref=github-token",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Apache NiFi git source using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Apache NiFi git source using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache NiFi git source using Flux[/green]")
-            print(res[0].decode('utf8'))
-            args = ("flux", "create", "kustomization", "pulse8-core-env-nifi",
-                    "--source=GitRepository/pulse8-core-env-nifi-repo", "--interval=1m", "--prune=true",
-                    "--target-namespace=default")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(res[0].decode("utf8"))
+            args = (
+                "flux",
+                "create",
+                "kustomization",
+                "pulse8-core-env-nifi",
+                "--source=GitRepository/pulse8-core-env-nifi-repo",
+                "--interval=1m",
+                "--prune=true",
+                "--target-namespace=default",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
                 print(f"[bold red]Failed to install Apache NiFi using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache NiFi using Flux[/green]")
-            print(res[0].decode('utf8'))
+            print(res[0].decode("utf8"))
         if KEY_CHOICES_INFRA_AIRFLOW in infra:
             print("Installing Apache Airflow using Flux...")
-            args = ("flux", "create", "source", "git", "pulse8-core-env-airflow-repo",
-                    "--url=https://github.com/synpulse-group/pulse8-core-env-airflow.git", "--branch=main",
-                    "--secret-ref=github-token")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args = (
+                "flux",
+                "create",
+                "source",
+                "git",
+                "pulse8-core-env-airflow-repo",
+                "--url=https://github.com/synpulse-group/pulse8-core-env-airflow.git",
+                "--branch=main",
+                "--secret-ref=github-token",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Apache Airflow git source using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Apache Airflow git source using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache Airflow git source using Flux[/green]")
-            print(res[0].decode('utf8'))
-            args = ("flux", "create", "kustomization", "pulse8-core-env-airflow",
-                    "--source=GitRepository/pulse8-core-env-airflow-repo", "--interval=1m", "--prune=true",
-                    "--target-namespace=default")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(res[0].decode("utf8"))
+            args = (
+                "flux",
+                "create",
+                "kustomization",
+                "pulse8-core-env-airflow",
+                "--source=GitRepository/pulse8-core-env-airflow-repo",
+                "--interval=1m",
+                "--prune=true",
+                "--target-namespace=default",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Apache Airflow using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Apache Airflow using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache Airflow using Flux[/green]")
-            print(res[0].decode('utf8'))
+            print(res[0].decode("utf8"))
         if KEY_CHOICES_INFRA_SUPERSET in infra:
             print("Installing Apache Superset using Flux...")
-            args = ("flux", "create", "source", "git", "pulse8-core-env-superset-repo",
-                    "--url=https://github.com/synpulse-group/pulse8-core-env-superset.git", "--branch=main",
-                    "--secret-ref=github-token")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args = (
+                "flux",
+                "create",
+                "source",
+                "git",
+                "pulse8-core-env-superset-repo",
+                "--url=https://github.com/synpulse-group/pulse8-core-env-superset.git",
+                "--branch=main",
+                "--secret-ref=github-token",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Apache Superset git source using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Apache Superset git source using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache Superset git source using Flux[/green]")
-            print(res[0].decode('utf8'))
-            args = ("flux", "create", "kustomization", "pulse8-core-env-superset",
-                    "--source=GitRepository/pulse8-core-env-superset-repo", "--interval=1m", "--prune=true",
-                    "--target-namespace=default")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(res[0].decode("utf8"))
+            args = (
+                "flux",
+                "create",
+                "kustomization",
+                "pulse8-core-env-superset",
+                "--source=GitRepository/pulse8-core-env-superset-repo",
+                "--interval=1m",
+                "--prune=true",
+                "--target-namespace=default",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Apache Superset using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Apache Superset using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Apache Superset using Flux[/green]")
-            print(res[0].decode('utf8'))
+            print(res[0].decode("utf8"))
         if KEY_CHOICES_INFRA_CLOUDSERVER in infra:
             print("Installing Zenko Cloudserver (S3) using Flux...")
-            args = ("flux", "create", "source", "git", "pulse8-core-env-cloudserver-repo",
-                    "--url=https://github.com/synpulse-group/pulse8-core-env-cloudserver.git", "--branch=main",
-                    "--secret-ref=github-token")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args = (
+                "flux",
+                "create",
+                "source",
+                "git",
+                "pulse8-core-env-cloudserver-repo",
+                "--url=https://github.com/synpulse-group/pulse8-core-env-cloudserver.git",
+                "--branch=main",
+                "--secret-ref=github-token",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Zenko Cloudserver (S3) git source using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Zenko Cloudserver (S3) git source using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
-            print(f"[green]Installed Zenko Cloudserver (S3) git source using Flux[/green]")
-            print(res[0].decode('utf8'))
-            args = ("flux", "create", "kustomization", "pulse8-core-env-cloudserver",
-                    "--source=GitRepository/pulse8-core-env-cloudserver-repo", "--interval=1m", "--prune=true",
-                    "--target-namespace=default")
-            pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(
+                f"[green]Installed Zenko Cloudserver (S3) git source using Flux[/green]"
+            )
+            print(res[0].decode("utf8"))
+            args = (
+                "flux",
+                "create",
+                "kustomization",
+                "pulse8-core-env-cloudserver",
+                "--source=GitRepository/pulse8-core-env-cloudserver-repo",
+                "--interval=1m",
+                "--prune=true",
+                "--target-namespace=default",
+            )
+            pipe = subprocess.Popen(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             res: tuple[bytes, bytes] = pipe.communicate()
             if pipe.returncode == 1:
-                print(f"[bold red]Failed to install Zenko Cloudserver (S3) using Flux[/bold red]")
-                print(res[1].decode('utf8'))
+                print(
+                    f"[bold red]Failed to install Zenko Cloudserver (S3) using Flux[/bold red]"
+                )
+                print(res[1].decode("utf8"))
                 exit(1)
             print(f"[green]Installed Zenko Cloudserver (S3) using Flux[/green]")
-            print(res[0].decode('utf8'))
+            print(res[0].decode("utf8"))
     if KEY_CHOICES_SERVICES in choices:
         services_core = choices[KEY_CHOICES_SERVICES]
         for service_core_key in services_core:
@@ -1170,9 +1283,7 @@ def env_install_choices(
                 )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(
-                        f"[bold red]Failed to uninstall Pinot using Flux[/bold red]"
-                    )
+                    print(f"[bold red]Failed to uninstall Pinot using Flux[/bold red]")
                     print(res[1].decode("utf8"))
                     exit(1)
                 print(f"[green]Uninstalled Pinot using Flux[/green]")
@@ -1260,102 +1371,216 @@ def env_install_choices(
                     print(res[1].decode("utf8"))
                     exit(1)
                 print(f"[green]Uninstalled Keycloak using Flux[/green]")
-                print(res[0].decode('utf8'))
-            if KEY_CHOICES_INFRA_SPARK not in choices_infra and KEY_CHOICES_INFRA_SPARK in choices_infra_old:
+                print(res[0].decode("utf8"))
+            if (
+                KEY_CHOICES_INFRA_SPARK not in choices_infra
+                and KEY_CHOICES_INFRA_SPARK in choices_infra_old
+            ):
                 print("Uninstalling Apache Spark using Flux...")
-                args = ("flux", "delete", "source", "git", "pulse8-core-env-spark-repo", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                args = (
+                    "flux",
+                    "delete",
+                    "source",
+                    "git",
+                    "pulse8-core-env-spark-repo",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache Spark git source using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache Spark git source using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
-                print(res[0].decode('utf8'))
-                args = ("flux", "delete", "kustomization", "pulse8-core-env-spark", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(res[0].decode("utf8"))
+                args = (
+                    "flux",
+                    "delete",
+                    "kustomization",
+                    "pulse8-core-env-spark",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache Spark using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache Spark using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
                 print(f"[green]Uninstalled Apache Spark using Flux[/green]")
-                print(res[0].decode('utf8'))
-            if KEY_CHOICES_INFRA_NIFI not in choices_infra and KEY_CHOICES_INFRA_NIFI in choices_infra_old:
+                print(res[0].decode("utf8"))
+            if (
+                KEY_CHOICES_INFRA_NIFI not in choices_infra
+                and KEY_CHOICES_INFRA_NIFI in choices_infra_old
+            ):
                 print("Uninstalling Apache NiFi using Flux...")
-                args = ("flux", "delete", "source", "git", "pulse8-core-env-nifi-repo", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                args = (
+                    "flux",
+                    "delete",
+                    "source",
+                    "git",
+                    "pulse8-core-env-nifi-repo",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache NiFi git source using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache NiFi git source using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
-                print(res[0].decode('utf8'))
+                print(res[0].decode("utf8"))
                 args = ("flux", "delete", "kustomization", "pulse8-core-env-nifi", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache NiFi using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache NiFi using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
                 print(f"[green]Uninstalled Apache NiFi using Flux[/green]")
-                print(res[0].decode('utf8'))
-            if KEY_CHOICES_INFRA_AIRFLOW not in choices_infra and KEY_CHOICES_INFRA_AIRFLOW in choices_infra_old:
+                print(res[0].decode("utf8"))
+            if (
+                KEY_CHOICES_INFRA_AIRFLOW not in choices_infra
+                and KEY_CHOICES_INFRA_AIRFLOW in choices_infra_old
+            ):
                 print("Uninstalling Apache Airflow using Flux...")
-                args = ("flux", "delete", "source", "git", "pulse8-core-env-airflow-repo", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                args = (
+                    "flux",
+                    "delete",
+                    "source",
+                    "git",
+                    "pulse8-core-env-airflow-repo",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache Airflow git source using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache Airflow git source using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
-                print(res[0].decode('utf8'))
-                args = ("flux", "delete", "kustomization", "pulse8-core-env-airflow", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(res[0].decode("utf8"))
+                args = (
+                    "flux",
+                    "delete",
+                    "kustomization",
+                    "pulse8-core-env-airflow",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache Airflow using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache Airflow using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
                 print(f"[green]Uninstalled Apache Airflow using Flux[/green]")
-                print(res[0].decode('utf8'))
-            if KEY_CHOICES_INFRA_SUPERSET not in choices_infra and KEY_CHOICES_INFRA_SUPERSET in choices_infra_old:
+                print(res[0].decode("utf8"))
+            if (
+                KEY_CHOICES_INFRA_SUPERSET not in choices_infra
+                and KEY_CHOICES_INFRA_SUPERSET in choices_infra_old
+            ):
                 print("Uninstalling Apache Superset using Flux...")
-                args = ("flux", "delete", "source", "git", "pulse8-core-env-superset-repo", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                args = (
+                    "flux",
+                    "delete",
+                    "source",
+                    "git",
+                    "pulse8-core-env-superset-repo",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache Superset git source using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache Superset git source using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
-                print(res[0].decode('utf8'))
-                args = ("flux", "delete", "kustomization", "pulse8-core-env-superset", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(res[0].decode("utf8"))
+                args = (
+                    "flux",
+                    "delete",
+                    "kustomization",
+                    "pulse8-core-env-superset",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Apache Superset using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Apache Superset using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
                 print(f"[green]Uninstalled Apache Superset using Flux[/green]")
-                print(res[0].decode('utf8'))
-            if KEY_CHOICES_INFRA_CLOUDSERVER not in choices_infra and KEY_CHOICES_INFRA_CLOUDSERVER in choices_infra_old:
+                print(res[0].decode("utf8"))
+            if (
+                KEY_CHOICES_INFRA_CLOUDSERVER not in choices_infra
+                and KEY_CHOICES_INFRA_CLOUDSERVER in choices_infra_old
+            ):
                 print("Uninstalling Zenko Cloudserver (S3) using Flux...")
-                args = ("flux", "delete", "source", "git", "pulse8-core-env-cloudserver-repo", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                args = (
+                    "flux",
+                    "delete",
+                    "source",
+                    "git",
+                    "pulse8-core-env-cloudserver-repo",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Zenko Cloudserver (S3) git source using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Zenko Cloudserver (S3) git source using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
-                print(res[0].decode('utf8'))
-                args = ("flux", "delete", "kustomization", "pulse8-core-env-cloudserver", "-s")
-                pipe = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(res[0].decode("utf8"))
+                args = (
+                    "flux",
+                    "delete",
+                    "kustomization",
+                    "pulse8-core-env-cloudserver",
+                    "-s",
+                )
+                pipe = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 res: tuple[bytes, bytes] = pipe.communicate()
                 if pipe.returncode == 1:
-                    print(f"[bold red]Failed to uninstall Zenko Cloudserver (S3) using Flux[/bold red]")
-                    print(res[1].decode('utf8'))
+                    print(
+                        f"[bold red]Failed to uninstall Zenko Cloudserver (S3) using Flux[/bold red]"
+                    )
+                    print(res[1].decode("utf8"))
                     exit(1)
                 print(f"[green]Uninstalled Zenko Cloudserver (S3) using Flux[/green]")
-                print(res[0].decode('utf8'))
+                print(res[0].decode("utf8"))
         if KEY_CHOICES_SERVICES in choices_old:
             choices_services_core = choices[KEY_CHOICES_SERVICES]
             choices_services_core_old = choices_old[KEY_CHOICES_SERVICES]
