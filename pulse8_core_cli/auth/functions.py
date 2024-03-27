@@ -14,6 +14,7 @@ from pulse8_core_cli.shared.module import (
     get_env_variables,
     get_dotm2_dir_path,
     get_dotdocker_config_file_path,
+    get_ghcrtoken_path,
     execute_shell_command,
 )
 
@@ -101,7 +102,7 @@ def auth_login(email: str) -> None:
     with open(docker_config_json_path, "w") as docker_config_json_file:
         docker_config_json_file.write(json.dumps(docker_config_json, indent=4))
 
-    # fetch GHCR token from Artifactory and save it to .pulse8/ghcr_token
+    # fetch GHCR token from Artifactory and save it to the token file
     print("[bold]fetching GHCR token from Artifactory...[/bold]")
     args = ["jf", "rt", "curl", "s8-env-files/ghcr-token.txt"]
     ghcr_token = execute_shell_command(
@@ -109,7 +110,7 @@ def auth_login(email: str) -> None:
         message_failure="fetching GHCR token from Artifactory failed",
         print_output=False,
     )
-    with open(Path.home().joinpath(".pulse8").joinpath("ghcr_token"), "w") as f:
+    with open(get_ghcrtoken_path(), "w") as f:
         f.write(ghcr_token)
 
     env_vars = get_env_variables(silent=True)

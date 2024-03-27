@@ -4,6 +4,7 @@ from pathlib import Path
 
 from inquirer import Text, prompt
 from rich import print
+from pulse8_core_cli.shared.module import get_cli_dir
 
 GIT_REPO_ORG = "synpulse-group"
 GIT_REPO_NAME = "pulse8-app-deployments"
@@ -14,7 +15,7 @@ def get_deployments_repo_directory() -> Path:
     Returns a Path object pointing to a local clone of the Pulse8 deployments repo. Creates
     the required folder structure if it doesn't exist yet.
     """
-    directory = Path.home().joinpath(f".pulse8/deployments/{GIT_REPO_NAME}")
+    directory = get_cli_dir().joinpath(f"deployments/{GIT_REPO_NAME}")
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
