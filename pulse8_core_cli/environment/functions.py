@@ -37,6 +37,7 @@ from pulse8_core_cli.environment.constants import (
     KEY_CHOICES_INFRA_MARIADB,
     KEY_CHOICES_INFRA_CLOUDSERVER,
     KEY_CHOICES_INFRA_PINOT,
+    KEY_CHOICES_SERVICES_ACCESS_CONTROL,
 )
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
@@ -1684,6 +1685,7 @@ def get_questions(
                 KEY_CHOICES_SERVICES_QUERY_ENGINE,
                 KEY_CHOICES_SERVICES_WORKFLOW_ENGINE,
                 KEY_CHOICES_SERVICES_DOCUMENT_MANAGEMENT,
+                KEY_CHOICES_SERVICES_ACCESS_CONTROL,
             ],
             default=preselection_services_core,
         ),
