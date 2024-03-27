@@ -22,6 +22,7 @@ copier-templates-extensions = "^0.3.0"
 pyyaml = "^6.0.1"
 black = "^23.12.1"
 pyuac = "^0.0.3"
+python-dotenv = "^1.0.1"
 
 
 [tool.poetry.dev-dependencies]
