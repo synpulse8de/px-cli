@@ -13,6 +13,9 @@ from uuid import uuid4
 from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_USER,
     ENV_GITHUB_TOKEN,
+    MAVEN,
+    POETRY,
+    PNPM,
 )
 from pulse8_core_cli.shared.module import (
     get_env_variables,
@@ -20,6 +23,7 @@ from pulse8_core_cli.shared.module import (
     rename_template_tmp_dir,
     git_init,
     git_create_remote,
+    get_maven_wrapper_executable,
 )
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
@@ -137,7 +141,14 @@ def update_template(
     print("[green]Project successfully updated.[/green]")
 
 
-def release_template(version: str, title: str, callback_before_git_commit=None):
+def release_template(
+    version: str,
+    title: str,
+    major: bool,
+    minor: bool,
+    patch: bool,
+    versioning_tool: str,
+):
     unreleased_header = "##[unreleased]"
     unreleased_header_idx = -1
 
@@ -150,9 +161,7 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     line_idx = -1
     unreleased_notes_end_idx = -1
     line_ending = None
-    lines = None
 
-    remote_git_url = None
     try:
         remote_git_url = (
             subprocess.check_output(["git", "config", "--get", "remote.origin.url"])
@@ -162,6 +171,8 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
         remote_git_url = remote_git_url.replace(
             "git@github.com:", "https://github.com/"
         ).replace(".git", "/")
+        if not remote_git_url.endswith("/"):
+            remote_git_url += "/"
     except Exception:
         print(
             "[bold][red]Failed to obtain remote git URL. Release cannot be performed without git remote.[/red][/bold]"
@@ -190,7 +201,7 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
                 latest_header_idx = line_idx
                 unreleased_notes_end_idx = line_idx
                 latest_header_version = (
-                    re.findall(r"\[.*?\]", line_compare)[0]
+                    re.findall(r"\[.*?]", line_compare)[0]
                     .replace("[", "")
                     .replace("]", "")
                 )
@@ -201,6 +212,39 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
                 unreleased_link_idx = line_idx
                 if unreleased_notes_end_idx == -1:
                     unreleased_notes_end_idx = line_idx
+
+    if version is None:
+        if latest_header_idx != -1:
+            version = latest_header_version
+        else:
+            version = "0.0.0"
+        if major:
+            version = bump_version_part(0, version)
+        if minor:
+            version = bump_version_part(1, version)
+        if patch or (not major and not minor):
+            version = bump_version_part(2, version)
+
+    print(f"Setting release version {version}")
+
+    release_view_pipe = subprocess.Popen(
+        ["gh", "release", "view", f"v{version}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    release_view_res: tuple[bytes, bytes] = release_view_pipe.communicate()
+    if release_view_pipe.returncode == 1:
+        release_view_stderr = release_view_res[1].decode("utf8")
+        if release_view_stderr.strip() != "release not found":
+            print(
+                f"[bold red]Failed to check if this release already exists: {release_view_stderr}[/bold red]"
+            )
+            exit(1)
+    else:
+        print(
+            f"[bold red]Failed to create a release. Release already exists.[/bold red]"
+        )
+        exit(1)
 
     pr_body = ""
     for idx, line in enumerate(lines):
@@ -222,24 +266,34 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     ] = f"[Unreleased]: {remote_git_url}compare/v{version}...HEAD{line_ending}"
 
     if latest_header_idx == -1:
-        lines.insert(
-            unreleased_link_idx + 3,
-            f"[{version}]: {remote_git_url}releases/tag/v{version}{line_ending}",
-        )
+        full_changelog_url = f"{remote_git_url}releases/tag/v{version}{line_ending}"
     else:
-        lines.insert(
-            unreleased_link_idx + 3,
-            f"[{version}]: {remote_git_url}compare/v{latest_header_version}...v{version}{line_ending}",
-        )
+        full_changelog_url = f"{remote_git_url}compare/v{latest_header_version}...v{version}{line_ending}"
+
+    full_changelog = f"[{version}]: {full_changelog_url}"
+
+    lines.insert(unreleased_link_idx + 3, full_changelog)
+    pr_body += line_ending + line_ending + "**Full Changelog:** " + full_changelog_url
 
     with open(f"{Path.cwd()}/CHANGELOG.md", "w", encoding="utf-8") as changelog:
         changelog.truncate(0)
         changelog.writelines(lines)
 
-    if callback_before_git_commit is not None:
-        callback_before_git_commit()
+    if versioning_tool == MAVEN:
+        os.system(
+            f'{get_maven_wrapper_executable()} versions:set -DnewVersion="{version}" -DgenerateBackupPoms=false --quiet'
+        )
+    elif versioning_tool == POETRY:
+        os.system(f"poetry version {version}")
+    elif versioning_tool == PNPM:
+        os.system(
+            f"pnpm version {version} --no-commit-hooks --no-git-tag-version --allow-same-version"
+        )
 
-    pr_title = f"release: v{version} | {title}"
+    if title is not None:
+        pr_title = f"release: v{version} | {title}"
+    else:
+        pr_title = f"release: v{version}"
 
     tmp_body_file_name = f"pr_body_{str(uuid4())}.txt"
     tmp_body_file_path = Path.home().joinpath(".pulse8").joinpath(tmp_body_file_name)
@@ -252,12 +306,19 @@ def release_template(version: str, title: str, callback_before_git_commit=None):
     os.system(f'git commit -m "{pr_title}"')
     os.system(f"git push -u origin release/v{version}")
     os.system(f'gh pr create -t "{pr_title}" -F "{tmp_body_file_path}"')
+    os.system(f"gh pr view -w release/v{version}")
     os.system("git fetch")
     os.remove(tmp_body_file_path)
 
     print(
         "[green]GitHub release PR was successfully created. You can merge it to create a release.[/green]"
     )
+
+
+def bump_version_part(idx: int, version: str):
+    version_split = version.split(".")
+    version_split[idx] = str(int(version_split[idx]) + 1)
+    return ".".join(version_split)
 
 
 def update_answers_file_src_path(

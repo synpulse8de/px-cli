@@ -56,8 +56,20 @@ def delete():
 
 
 @app.command()
-def release(version: str, title: str):
+def release(
+    version: Annotated[str, typer.Argument(help="Version of the release")] = None,
+    title: Annotated[str, typer.Option(help="Title of the release")] = None,
+    major: Annotated[
+        bool, typer.Option(help="Increment major part of version")
+    ] = False,
+    minor: Annotated[
+        bool, typer.Option(help="Increment minor part of version")
+    ] = False,
+    patch: Annotated[
+        bool, typer.Option(help="Increment patch part of version")
+    ] = False,
+):
     """
     Create a GitHub release for an existing frontend shared lib
     """
-    frontend_shared_lib_release(version, title)
+    frontend_shared_lib_release(version, title, major, minor, patch)
