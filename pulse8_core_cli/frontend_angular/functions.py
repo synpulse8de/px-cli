@@ -1,6 +1,6 @@
 import os
 
-from pulse8_core_cli.shared.constants import TEMPLATE_REPO_FRONTEND_ANGULAR
+from pulse8_core_cli.shared.constants import TEMPLATE_REPO_FRONTEND_ANGULAR, PNPM
 from pulse8_core_cli.shared.template_management import (
     create_template,
     update_template,
@@ -36,10 +36,7 @@ def frontend_angular_update(answers_file: str, defaults: bool, skip_answered: bo
     )
 
 
-def frontend_angular_release(version: str, title: str):
-    def callback_before_git_commit():
-        os.system(
-            f"pnpm version {version} --no-commit-hooks --no-git-tag-version --allow-same-version"
-        )
-
-    release_template(version, title, callback_before_git_commit)
+def frontend_angular_release(
+    version: str, title: str, major: bool, minor: bool, patch: bool
+):
+    release_template(version, title, major, minor, patch, PNPM)
