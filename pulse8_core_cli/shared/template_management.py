@@ -261,9 +261,9 @@ def release_template(
     lines.insert(unreleased_header_idx + 1, line_ending)
     lines.insert(unreleased_header_idx + 2, f"## [{version}] - {today}{line_ending}")
 
-    lines[
-        unreleased_link_idx + 2
-    ] = f"[Unreleased]: {remote_git_url}compare/v{version}...HEAD{line_ending}"
+    lines[unreleased_link_idx + 2] = (
+        f"[Unreleased]: {remote_git_url}compare/v{version}...HEAD{line_ending}"
+    )
 
     if latest_header_idx == -1:
         full_changelog_url = f"{remote_git_url}releases/tag/v{version}{line_ending}"
@@ -353,9 +353,9 @@ def update_answers_file_src_path(
             env_vars = get_env_variables(silent=True)
             github_token = env_vars[ENV_GITHUB_TOKEN]
             github_user = env_vars[ENV_GITHUB_USER]
-            answers_file[
-                "_src_path"
-            ] = f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
+            answers_file["_src_path"] = (
+                f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
+            )
 
         with open(answers_file_path, "w") as stream:
             try:
