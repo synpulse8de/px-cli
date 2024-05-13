@@ -2,6 +2,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 
 from pathlib import Path
 from uuid import uuid4
@@ -88,9 +89,21 @@ def git_create_remote(
     if create_remote_repo:
         print(f"[green]Creating private remote repository {repository_name}[/green]")
 
-        os.system(
-            f"gh repo create {repository_name} --private --source=. --remote=upstream"
-        )
+        print("[bold]Check GitHub authentication status[/bold]")
+
+        os.system(f"gh auth status")
+
+        try:
+            subprocess.run(["gh", "repo", "create", repository_name, "--private", "--source=.", "--remote=upstream"],
+                           check=True, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError:
+            print(f"[bold red]Error: GitHub authentication Failed.[/bold red]")
+            print(f"[bold red]Make sure your GitHub token isn't expired.[/bold red]")
+            print(
+                f"[bold red]unset your GitHub Token with 'unset GITHUB_TOKEN' and re-initiate "
+                f"the login process with 'pulse8 auth login'. [/bold red]")
+            sys.exit(1)
+
         os.system(
             f"git remote add origin https://{github_token}@github.com/{github_user}/{repository_name}.git"
         )

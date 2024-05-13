@@ -17,7 +17,7 @@ def frontend_angular_create(
 ):
     def callback_after_git_init():
         os.system("pnpm install")
-        # os.system("husky install")
+        os.system("npx husky install")
 
     create_template(
         TEMPLATE_REPO_FRONTEND_ANGULAR,
