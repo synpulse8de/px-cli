@@ -4,9 +4,8 @@ metadata:
   name: {{ namespace }}
   labels:
     synpulse8.com/env: {{ environment_abbreviation }}
-    istio-injection: enabled
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta2
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: {{ helmrelease_name }}
@@ -21,7 +20,7 @@ spec:
   chart:
     spec:
       chart: pulse8-microservice
-      version: "0.2.*"
+      version: "0.4.*"
       sourceRef:
         name: pulse8-helm-charts-oci
         namespace: flux-system
@@ -63,14 +62,14 @@ spec:
         nginx.ingress.kubernetes.io/x-forwarded-prefix: /$1
       {% endif %}
       hosts:
-        - host: {{ environment_abbreviation }}.{{ chart_name }}.aws.synpulse8.com
+        - host: {{ environment_abbreviation }}.{{ chart_name }}.pulse8.aws.synpulse8.com
           paths:
             - path: {{ ingress_route }}
               pathType: Prefix
       tls:
         - secretName: {{ chart_name }}-tls # this will be created dynamically, its name doesn't matter
           hosts:
-            - {{ environment_abbreviation }}.{{ chart_name }}.aws.synpulse8.com # must match your host definition above
+            - {{ environment_abbreviation }}.{{ chart_name }}.pulse8.aws.synpulse8.com # must match your host definition above
     resources:
       requests:
         cpu: 100m
