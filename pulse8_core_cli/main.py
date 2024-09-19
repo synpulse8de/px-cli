@@ -71,13 +71,6 @@ pulse8_cli.add_typer(
 )
 
 pulse8_cli.add_typer(
-    deploy_module.app,
-    name="deploy",
-    help="Set up Kubernetes manifests and deploy Pulse8 applications",
-    no_args_is_help=True,
-)
-
-pulse8_cli.add_typer(
     utils_module.app,
     name="utils",
     help="Pulse8 utility commands",
