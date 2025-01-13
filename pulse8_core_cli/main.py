@@ -8,7 +8,7 @@ from pulse8_core_cli.backend_shared_lib import module as backend_shared_lib_modu
 from pulse8_core_cli.frontend import module as frontend_module
 from pulse8_core_cli.frontend_angular import module as frontend_angular_module
 from pulse8_core_cli.frontend_shared_lib import module as frontend_shared_lib_module
-from pulse8_core_cli.deploy import module as deploy_module
+#from pulse8_core_cli.deploy import module as deploy_module
 from pulse8_core_cli.utils import module as utils_module
 
 pulse8_cli = typer.Typer(no_args_is_help=True)
