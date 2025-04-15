@@ -147,7 +147,7 @@ def get_dotm2_dir_path() -> Path:
 
 
 def validate_email(email):
-    pattern = r"^[a-zA-Z]+\.[a-zA-Z]+@(synpulse\.com|synpulse8\.com)$"
+    pattern = r"^[a-zA-Z]+\.[a-zA-Z]+@(synpulse\.com|synpulse8\.com|synpulse8\.de)$"
     if re.match(pattern, email):
         return True
     return False
