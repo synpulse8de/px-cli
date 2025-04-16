@@ -70,6 +70,42 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         )
         exit(1)
 
+def get_env_variables_small(silent: bool = False) -> dict[str, any]:
+    try:
+        config_github_cli_path: Path
+        try:
+            if is_windows():
+                config_github_cli_path = (
+                    Path(os.getenv("APPDATA"))
+                    .joinpath("GitHub CLI")
+                    .joinpath("hosts.yml")
+                )
+            else:
+                config_github_cli_path = (
+                    Path.home().joinpath(".config").joinpath("gh").joinpath("hosts.yml")
+                )
+        except Exception as e:
+            print(f"[red]Error reading from GitHub CLI hosts.yml[/red]")
+            print(
+                f"[italic]Hint: Please try to reauthorize using [bold]pulse8 auth login[/bold][/italic]"
+            )
+            raise e
+        config_github_cli_file_raw: str
+        with open(config_github_cli_path) as config_github_cli_file:
+            config_github_cli_file_raw = config_github_cli_file.read()
+        config_github_cli = yaml.load(config_github_cli_file_raw, yaml.Loader)
+        github_com = config_github_cli["github.com"]
+        github_user = github_com["user"]
+        github_token = github_com["oauth_token"]
+        return {
+            ENV_GITHUB_USER: github_user,
+            ENV_GITHUB_TOKEN: github_token,
+        }
+    except KeyError:
+        print(
+            "[bold red]Error retrieving environment variables - please use 'pulse8 auth login'[/bold red]"
+        )
+        exit(1)
 
 def git_init(callback_after_git_init):
     os.system("git init")

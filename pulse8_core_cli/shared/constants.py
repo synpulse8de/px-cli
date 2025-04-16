@@ -1,10 +1,10 @@
 # backend repositories
-TEMPLATE_REPO_BACKEND_SPRING = "pulse8-core-backend-template"
+TEMPLATE_REPO_BACKEND_SPRING = "px-queryengine-backend-template"
 TEMPLATE_REPO_BACKEND_FASTAPI = "pulse8-core-backend-fastapi-template"
 TEMPLATE_REPO_BACKEND_SHARED_LIB_JAVA = "pulse8-core-backend-shared-lib-template"
 
 # frontend repositories
-TEMPLATE_REPO_FRONTEND_ANGULAR = "pulse8-core-frontend-angular-template"
+TEMPLATE_REPO_FRONTEND_ANGULAR = "px-queryengine-frontend-template"
 TEMPLATE_REPO_FRONTEND_NEXTJS = "pulse8-core-frontend-nextjs-template"
 TEMPLATE_REPO_FRONTEND_SHARED_LIB_REACT = (
     "pulse8-core-frontend-shared-lib-react-template"
