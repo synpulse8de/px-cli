@@ -23,7 +23,7 @@ from pulse8_core_cli.shared.module import (
     rename_template_tmp_dir,
     git_init,
     git_create_remote,
-    get_maven_wrapper_executable,
+    get_maven_wrapper_executable, get_env_variables_small,
 )
 from pulse8_core_cli.shared.platform_discovery import is_windows
 
@@ -36,7 +36,7 @@ def template_precheck(check_win_registry: bool, caller_command: str = None):
         setup_win_registry_admin(caller_command)
     print("[bold]running template precheck...[/bold]")
     try:
-        env_vars = get_env_variables()
+        env_vars = get_env_variables_small()
         github_token = env_vars[ENV_GITHUB_TOKEN]
         github_user = env_vars[ENV_GITHUB_USER]
     except KeyError:
@@ -58,7 +58,7 @@ def create_template(
     caller_command: str = None,
 ):
     template_precheck(check_win_registry, caller_command=caller_command)
-    env_vars = get_env_variables(silent=True)
+    env_vars = get_env_variables_small(silent=True)
     github_token = env_vars[ENV_GITHUB_TOKEN]
     github_user = env_vars[ENV_GITHUB_USER]
 
@@ -72,9 +72,9 @@ def create_template(
     tmp_dir = create_template_tmp_dir()
 
     if ssh:
-        src_path = f"git@github.com:synpulse-group/{template_repo_name}.git"
+        src_path = f"git@github.com:synpulse8de/{template_repo_name}.git"
     else:
-        src_path = f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
+        src_path = f"https://{github_user}:{github_token}@github.com/synpulse8de/{template_repo_name}.git"
 
     worker = run_copy(
         src_path,
