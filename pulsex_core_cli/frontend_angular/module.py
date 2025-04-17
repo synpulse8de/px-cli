@@ -1,10 +1,10 @@
 import typer
 from typing_extensions import Annotated
 
-from pulse8_core_cli.backend.functions import (
-    backend_create,
-    backend_update,
-    backend_release,
+from pulsex_core_cli.frontend_angular.functions import (
+    frontend_angular_create,
+    frontend_angular_update,
+    frontend_angular_release,
 )
 
 app = typer.Typer()
@@ -13,7 +13,7 @@ app = typer.Typer()
 @app.command()
 def dev():
     """
-    Develop on an existing backend
+    Develop on an existing frontend
     """
     print(f"[WIP]...")
 
@@ -34,9 +34,11 @@ def create(
     ssh: Annotated[bool, typer.Option(help="Use SSH for git remote")] = False,
 ):
     """
-    Create a new backend
+    Create a new frontend
     """
-    backend_create(create_remote_repository, answers_file, defaults, skip_answered, ssh)
+    frontend_angular_create(
+        create_remote_repository, answers_file, defaults, skip_answered, ssh
+    )
 
 
 @app.command()
@@ -48,15 +50,15 @@ def update(
     skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = True,
 ):
     """
-    Update an existing backend
+    Update an existing frontend
     """
-    backend_update(answers_file, defaults, skip_answered)
+    frontend_angular_update(answers_file, defaults, skip_answered)
 
 
 @app.command()
 def delete():
     """
-    Delete an existing backend
+    Delete an existing frontend
     """
     print(f"[WIP]...")
 
@@ -64,7 +66,7 @@ def delete():
 @app.command()
 def deploy():
     """
-    Start the deployment workflow for an existing backend
+    Start the deployment workflow for an existing frontend
     """
     print(f"[WIP]...")
 
@@ -84,6 +86,6 @@ def release(
     ] = False,
 ):
     """
-    Create a GitHub release for an existing backend
+    Create a GitHub release for an existing frontend
     """
-    backend_release(version, title, major, minor, patch)
+    frontend_angular_release(version, title, major, minor, patch)

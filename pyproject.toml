@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "pulse8-core-cli"
+name = "pulseX-core-cli"
 version = "0.1.0"
-description = "Pulse8 Core Command Line Interface (CLI)"
-authors = ["Pulse8 Core Team"]
+description = "PulseX Core Command Line Interface (CLI)"
+authors = ["PulseX Core Team"]
 readme = "README.md"
 
 
 [tool.poetry.scripts]
-pulse8 = "pulse8_core_cli.main:pulse8_cli"
-p8 = "pulse8_core_cli.main:pulse8_cli"
+pulseX = "pulsex_core_cli.main:pulseX_cli"
+px = "pulsex_core_cli.main:pulseX_cli"
 
 
 [tool.poetry.dependencies]

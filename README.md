@@ -1,6 +1,6 @@
-# 🚀 Pulse8 Core CLI
+# 🚀 PulseX Core CLI
 
-> This is the Command Line Interface to easy develop with the Pulse8 Core Templates and Environments
+> This is the Command Line Interface to easy develop with the PulseX Core Templates and Environments
 
 ## [Installation](/docs/installation.md)
 

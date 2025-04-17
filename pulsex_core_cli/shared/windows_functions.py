@@ -25,7 +25,7 @@ def setup_win_registry():
             print("[green]Successfully updated Windows registry.[/green]")
         except PermissionError:
             print(
-                "[red]Failed to update Windows registry. Please try running 'pulse8 utils setup-winreg' "
+                "[red]Failed to update Windows registry. Please try running 'pulseX utils setup-winreg' "
                 "manually with administrator privileges or update registry key manually by setting "
                 "'Computer\\HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem' to '1'[/red]"
             )
@@ -34,7 +34,7 @@ def setup_win_registry():
 
 def setup_win_registry_admin(caller_command: str = None):
     if get_win_registry_value_long_paths_enabled() == 0:
-        return_code = pyuac.runAsAdmin(cmdLine=["pulse8", "utils", "setup-winreg"])
+        return_code = pyuac.runAsAdmin(cmdLine=["pulseX", "utils", "setup-winreg"])
         if return_code == 0:
             print("[green]Successfully updated Windows registry.[/green]")
             if caller_command is not None:
@@ -42,7 +42,7 @@ def setup_win_registry_admin(caller_command: str = None):
                 exit(0)
         else:
             print(
-                "[red]Failed to update Windows registry. Please try running 'pulse8 utils setup-winreg' "
+                "[red]Failed to update Windows registry. Please try running 'pulseX utils setup-winreg' "
                 "manually with administrator privileges or update registry key manually by setting "
                 "'Computer\\HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem' to '1'[/red]"
             )

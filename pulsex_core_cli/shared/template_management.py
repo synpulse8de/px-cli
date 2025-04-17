@@ -10,14 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from pulse8_core_cli.shared.constants import (
+from pulsex_core_cli.shared.constants import (
     ENV_GITHUB_USER,
     ENV_GITHUB_TOKEN,
     MAVEN,
     POETRY,
     PNPM, GITHUB_NAMESPACE,
 )
-from pulse8_core_cli.shared.module import (
+from pulsex_core_cli.shared.module import (
     get_env_variables,
     create_template_tmp_dir,
     rename_template_tmp_dir,
@@ -25,10 +25,10 @@ from pulse8_core_cli.shared.module import (
     git_create_remote,
     get_maven_wrapper_executable, get_env_variables_small,
 )
-from pulse8_core_cli.shared.platform_discovery import is_windows
+from pulsex_core_cli.shared.platform_discovery import is_windows
 
 if is_windows():
-    from pulse8_core_cli.shared.windows_functions import setup_win_registry_admin
+    from pulsex_core_cli.shared.windows_functions import setup_win_registry_admin
 
 
 def template_precheck(check_win_registry: bool, caller_command: str = None):
@@ -41,7 +41,7 @@ def template_precheck(check_win_registry: bool, caller_command: str = None):
         github_user = env_vars[ENV_GITHUB_USER]
     except KeyError:
         print("[bold][red]GitHub authentication not set...[/red][/bold]")
-        print("[italic]Hint: Try [bold]pulse8 auth login[/bold][/italic]")
+        print("[italic]Hint: Try [bold]pulseX auth login[/bold][/italic]")
         exit(1)
     print("template precheck done - continue...")
 
@@ -296,7 +296,7 @@ def release_template(
         pr_title = f"release: v{version}"
 
     tmp_body_file_name = f"pr_body_{str(uuid4())}.txt"
-    tmp_body_file_path = Path.home().joinpath(".pulse8").joinpath(tmp_body_file_name)
+    tmp_body_file_path = Path.home().joinpath(".pulseX").joinpath(tmp_body_file_name)
 
     with open(tmp_body_file_path, "w", encoding="utf-8") as pr_body_file:
         pr_body_file.write(pr_body)

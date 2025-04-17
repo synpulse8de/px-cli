@@ -1,4 +1,4 @@
-# README for developing the Pulse8 CLI
+# README for developing the PulseX CLI
 
 ## Setup
 

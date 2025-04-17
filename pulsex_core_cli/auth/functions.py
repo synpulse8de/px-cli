@@ -9,7 +9,7 @@ from pathlib import Path
 import typer
 from rich import print
 
-from pulse8_core_cli.shared.module import (
+from pulsex_core_cli.shared.module import (
     validate_email,
     get_env_variables,
     get_dotm2_dir_path,

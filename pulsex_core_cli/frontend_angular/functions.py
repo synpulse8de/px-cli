@@ -1,7 +1,7 @@
 import os
 
-from pulse8_core_cli.shared.constants import TEMPLATE_REPO_FRONTEND_ANGULAR, PNPM
-from pulse8_core_cli.shared.template_management import (
+from pulsex_core_cli.shared.constants import TEMPLATE_REPO_FRONTEND_ANGULAR, PNPM
+from pulsex_core_cli.shared.template_management import (
     create_template,
     update_template,
     release_template,

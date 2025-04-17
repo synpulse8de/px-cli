@@ -1,6 +1,6 @@
 import typer
 
-from pulse8_core_cli.auth.functions import auth_login
+from pulsex_core_cli.auth.functions import auth_login
 
 app = typer.Typer()
 
