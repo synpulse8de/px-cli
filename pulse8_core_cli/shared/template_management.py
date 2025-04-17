@@ -15,7 +15,7 @@ from pulse8_core_cli.shared.constants import (
     ENV_GITHUB_TOKEN,
     MAVEN,
     POETRY,
-    PNPM,
+    PNPM, GITHUB_NAMESPACE,
 )
 from pulse8_core_cli.shared.module import (
     get_env_variables,
@@ -72,9 +72,9 @@ def create_template(
     tmp_dir = create_template_tmp_dir()
 
     if ssh:
-        src_path = f"git@github.com:synpulse8de/{template_repo_name}.git"
+        src_path = f"git@github.com:{GITHUB_NAMESPACE}/{template_repo_name}.git"
     else:
-        src_path = f"https://{github_user}:{github_token}@github.com/synpulse8de/{template_repo_name}.git"
+        src_path = f"https://{github_user}:{github_token}@github.com/{GITHUB_NAMESPACE}/{template_repo_name}.git"
 
     worker = run_copy(
         src_path,
@@ -350,11 +350,11 @@ def update_answers_file_src_path(
                 "//.*:.*@github\\.com/", "//github.com/", answers_file["_src_path"]
             )
         else:
-            env_vars = get_env_variables(silent=True)
+            env_vars = get_env_variables_small(silent=True)
             github_token = env_vars[ENV_GITHUB_TOKEN]
             github_user = env_vars[ENV_GITHUB_USER]
             answers_file["_src_path"] = (
-                f"https://{github_user}:{github_token}@github.com/synpulse-group/{template_repo_name}.git"
+                f"https://{github_user}:{github_token}@github.com/{GITHUB_NAMESPACE}/{template_repo_name}.git"
             )
 
         with open(answers_file_path, "w") as stream:

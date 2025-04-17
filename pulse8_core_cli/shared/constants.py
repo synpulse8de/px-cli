@@ -10,6 +10,9 @@ TEMPLATE_REPO_FRONTEND_SHARED_LIB_REACT = (
     "pulse8-core-frontend-shared-lib-react-template"
 )
 
+# base namespaces
+GITHUB_NAMESPACE = "synpulse8de"
+
 # environment variables
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
 ENV_GITHUB_GHCR_TOKEN = "GITHUB_GHCR_TOKEN"  # general, non-user-specific token for GHCR
