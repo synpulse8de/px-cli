@@ -207,7 +207,7 @@ def get_maven_wrapper_executable():
     if is_windows():
         return "mvnw.cmd"
     else:
-        return "./mvnw"
+        return "mvn"
 
 
 def execute_shell_command(
