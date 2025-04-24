@@ -29,7 +29,7 @@ def auth_login(email: str) -> None:
 
     email = email.lower()
     has_synpulse_access = typer.confirm(
-        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?"
+        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?", default=True
     )
     if not has_synpulse_access:
         print(
@@ -261,15 +261,21 @@ def setup_npmrc(token: str, email: str) -> None:
 def adjust_git_config(email: str):
     os.system("git config --global core.longpaths true")
     try:
-        name = email.split("@")[0]
-        name_parts = name.split(".")
-        first_name = name_parts[0]
-        last_name = name_parts[1]
-        username = (first_name + " " + last_name).title()
+        username = subprocess.run(
+            ["gh", "api", "user", "--jq", ".login"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True
+        ).stdout
         os.system('git config --global user.name "' + username + '"')
         os.system('git config --global user.email "' + email + '"')
         print("email updated in git and username for git changed to " + username)
-    except Exception:
+    except subprocess.CalledProcessError as e:
+        print("❌ Failed to get emails from GitHub. Make sure you ran:")
+        print("   gh api user --jq .login")
+        print(e.stderr)
+    except Exception as e:
         print(
             f"[bold red]creation of git username from email failed, skipping...[/bold red]"
         )
