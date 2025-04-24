@@ -290,3 +290,25 @@ def get_github_emails():
         print("   gh auth refresh -s user:email")
         print(e.stderr)
         return []
+
+def auth_logout():
+    if is_logged_in():
+        print(f"GitHub CLI is logged in. Logging out...")
+        logout()
+    else:
+        print(f"No GitHub CLI login detected.")
+
+def is_logged_in():
+    try:
+        print(f"Check if user is logged in...")
+        subprocess.run(["gh", "auth", "status"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+def logout():
+    try:
+        subprocess.run(["gh", "auth", "logout"], check=True)
+        print(f"Logged out successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Logout failed:", e)

@@ -1,6 +1,6 @@
 import typer
 
-from pulsex_core_cli.auth.functions import auth_login
+from pulsex_core_cli.auth.functions import auth_login, auth_logout
 
 app = typer.Typer()
 
@@ -18,4 +18,4 @@ def logout():
     """
     Clean up authentication
     """
-    print(f"[WIP]...")
+    auth_logout()

@@ -9,15 +9,6 @@ from pulsex_core_cli.frontend_angular.functions import (
 
 app = typer.Typer()
 
-
-@app.command()
-def dev():
-    """
-    Develop on an existing frontend
-    """
-    print(f"[WIP]...")
-
-
 @app.command()
 def create(
     answers_file: Annotated[str, typer.Option(help="Copier answers file path")] = None,
@@ -59,14 +50,6 @@ def update(
 def delete():
     """
     Delete an existing frontend
-    """
-    print(f"[WIP]...")
-
-
-@app.command()
-def deploy():
-    """
-    Start the deployment workflow for an existing frontend
     """
     print(f"[WIP]...")
 
