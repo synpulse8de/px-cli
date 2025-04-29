@@ -47,7 +47,7 @@ def auth_login(email: str) -> None:
 
     print("[bold]authenticate against github.com...[bold]")
     os.system(
-        "gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web --scopes 'user:email'"
+        "gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web --scopes \"user:email\""
     )
     if email not in get_github_emails():
         print("❌ The email you entered is not verified on your GitHub account.")
