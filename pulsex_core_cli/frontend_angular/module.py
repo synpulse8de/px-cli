@@ -1,24 +1,13 @@
-from typing import Annotated
-
 import typer
+from typing_extensions import Annotated
 
-from rich import print
-from pulse8_core_cli.frontend.functions import (
-    frontend_create,
-    frontend_update,
-    frontend_release,
+from pulsex_core_cli.frontend_angular.functions import (
+    frontend_angular_create,
+    frontend_angular_update,
+    frontend_angular_release,
 )
 
 app = typer.Typer()
-
-
-@app.command()
-def dev():
-    """
-    Develop on an existing frontend
-    """
-    print(f"[WIP]...")
-
 
 @app.command()
 def create(
@@ -38,7 +27,7 @@ def create(
     """
     Create a new frontend
     """
-    frontend_create(
+    frontend_angular_create(
         create_remote_repository, answers_file, defaults, skip_answered, ssh
     )
 
@@ -54,21 +43,13 @@ def update(
     """
     Update an existing frontend
     """
-    frontend_update(answers_file, defaults, skip_answered)
+    frontend_angular_update(answers_file, defaults, skip_answered)
 
 
 @app.command()
 def delete():
     """
     Delete an existing frontend
-    """
-    print(f"[WIP]...")
-
-
-@app.command()
-def deploy():
-    """
-    Start the deployment workflow for an existing frontend
     """
     print(f"[WIP]...")
 
@@ -90,4 +71,4 @@ def release(
     """
     Create a GitHub release for an existing frontend
     """
-    frontend_release(version, title, major, minor, patch)
+    frontend_angular_release(version, title, major, minor, patch)

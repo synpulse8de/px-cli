@@ -28,7 +28,7 @@ nvm use <NODE_VERSION>
 If you get "No such file or directory ".../hosts.yml" (system specific GitHub path) when running commands for templates, it can happen if you did not log in to needed infrastructure using command
 
 ```bash
-pulse8 auth login
+pulseX auth login
 ```
 
 ---
@@ -62,7 +62,7 @@ Full error message may look something like this:
 
 ```bash
 Failed Cluster Start: Failed to start server k3d-local-dev-server-0: runtime failed to start node 'k3d-local-dev-server-0': docker failed to
-start container for node 'k3d-local-dev-server-0': Error response from daemon: path /host_mnt/Users/user/.pulse8/volumes/local-dev/var/lib/kubelet/pods is
+start container for node 'k3d-local-dev-server-0': Error response from daemon: path /host_mnt/Users/user/.pulseX/volumes/local-dev/var/lib/kubelet/pods is
 mounted on /host_mnt but it is not a shared mount
 ```
 
@@ -80,12 +80,12 @@ To fix this:
 
 [https://github.com/FiloSottile/mkcert/issues/370](https://github.com/FiloSottile/mkcert/issues/370#issuecomment-1280377305)<https://github.com/FiloSottile/mkcert/issues/370#issuecomment-1280377305>
 
-### `command not found: pulse8`
+### `command not found: pulseX`
 
 The logs state messages like these:
 
 ```
-WARNING: The scripts p8 and pulse8 are installed in '<somepath>' which is not on PATH.
+WARNING: The scripts px and pulseX are installed in '<somepath>' which is not on PATH.
 Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location
 ```
 

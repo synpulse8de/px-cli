@@ -65,11 +65,11 @@ jf intro`
 - Clone the project, install, install tools, build, install for user & use
 
 ```bash
-git clone https://github.com/synpulse-group/pulse8-core-cli.git
-cd pulse8-core-cli
+git clone https://github.com/synpulse8de/px-cli.git
+cd px-cli
 poetry install
 poetry build
-pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl
+pip install --user ./dist/pulseX_core_cli-0.1.0-py3-none-any.whl
 ```
 
 #### Hint
@@ -78,5 +78,5 @@ If you want to clean reinstall after changes:
 
 ```bash
 poetry build
-pip install --user ./dist/pulse8_core_cli-0.1.0-py3-none-any.whl --force-reinstall
+pip install --user ./dist/pulseX_core_cli-0.1.0-py3-none-any.whl --force-reinstall
 ```

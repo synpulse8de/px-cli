@@ -1,5 +1,5 @@
-site_name: "PULSE8 Core CLI"
-site_description: "Docs on how to use the Pulse8 CLI"
+site_name: "PulseX Core CLI"
+site_description: "Docs on how to use the PulseX CLI"
 nav:
   - Main: index.md
   - Installation: installation.md

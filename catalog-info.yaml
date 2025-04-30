@@ -2,9 +2,9 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: "pulse8-core-cli"
-  title: "PULSE8 Core CLI"
-  description: "The Pulse8 Core CLI is a tool which enables to easily develop with the Pulse8 Core Templates and use the Pulse8 Core Environments. It also brings helpful other stuff like authenticate against Infrastructure."
+  name: "pulseX-core-cli"
+  title: "PULSEX Core CLI"
+  description: "The PulseX Core CLI is a tool which enables to easily develop with the PulseX Core Templates and use the PulseX Core Environments. It also brings helpful other stuff like authenticate against Infrastructure."
   annotations:
     backstage.io/techdocs-ref: dir:. # refers to the current repo where the `mkdocs.yaml` file is stored
 spec:

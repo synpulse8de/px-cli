@@ -1,10 +1,10 @@
 import typer
 from typing_extensions import Annotated
 
-from pulse8_core_cli.frontend_shared_lib.functions import (
-    frontend_shared_lib_create,
-    frontend_shared_lib_update,
-    frontend_shared_lib_release,
+from pulsex_core_cli.backend_shared_lib.functions import (
+    backend_shared_lib_create,
+    backend_shared_lib_update,
+    backend_shared_lib_release,
 )
 
 app = typer.Typer()
@@ -26,9 +26,9 @@ def create(
     ssh: Annotated[bool, typer.Option(help="Use SSH for git remote")] = False,
 ):
     """
-    Create a new frontend shared lib
+    Create a new backend shared lib
     """
-    frontend_shared_lib_create(
+    backend_shared_lib_create(
         create_remote_repository, answers_file, defaults, skip_answered, ssh
     )
 
@@ -42,15 +42,15 @@ def update(
     skip_answered: Annotated[bool, typer.Option(help="Skip answered questions")] = True,
 ):
     """
-    Update an existing frontend shared lib
+    Update an existing backend shared lib
     """
-    frontend_shared_lib_update(answers_file, defaults, skip_answered)
+    backend_shared_lib_update(answers_file, defaults, skip_answered)
 
 
 @app.command()
 def delete():
     """
-    Delete an existing frontend shared lib
+    Delete an existing backend shared lib
     """
     print(f"[WIP]...")
 
@@ -70,6 +70,6 @@ def release(
     ] = False,
 ):
     """
-    Create a GitHub release for an existing frontend shared lib
+    Create a GitHub release for an existing backend shared lib
     """
-    frontend_shared_lib_release(version, title, major, minor, patch)
+    backend_shared_lib_release(version, title, major, minor, patch)

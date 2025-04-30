@@ -9,7 +9,7 @@ from pathlib import Path
 import typer
 from rich import print
 
-from pulse8_core_cli.shared.module import (
+from pulsex_core_cli.shared.module import (
     validate_email,
     get_env_variables,
     get_dotm2_dir_path,
@@ -29,7 +29,7 @@ def auth_login(email: str) -> None:
 
     email = email.lower()
     has_synpulse_access = typer.confirm(
-        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?"
+        "Do you have access to GitHub (github.com, fistname-lastname_SYNPULSE) & JFrog (synpulse.jfrog.io, SAML SSO) ?", default=True
     )
     if not has_synpulse_access:
         print(
@@ -47,7 +47,7 @@ def auth_login(email: str) -> None:
 
     print("[bold]authenticate against github.com...[bold]")
     os.system(
-        "gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web --scopes 'user:email'"
+        "gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web --scopes \"user:email\""
     )
     if email not in get_github_emails():
         print("❌ The email you entered is not verified on your GitHub account.")
@@ -261,15 +261,21 @@ def setup_npmrc(token: str, email: str) -> None:
 def adjust_git_config(email: str):
     os.system("git config --global core.longpaths true")
     try:
-        name = email.split("@")[0]
-        name_parts = name.split(".")
-        first_name = name_parts[0]
-        last_name = name_parts[1]
-        username = (first_name + " " + last_name).title()
+        username = subprocess.run(
+            ["gh", "api", "user", "--jq", ".login"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True
+        ).stdout
         os.system('git config --global user.name "' + username + '"')
         os.system('git config --global user.email "' + email + '"')
         print("email updated in git and username for git changed to " + username)
-    except Exception:
+    except subprocess.CalledProcessError as e:
+        print("❌ Failed to get emails from GitHub. Make sure you ran:")
+        print("   gh api user --jq .login")
+        print(e.stderr)
+    except Exception as e:
         print(
             f"[bold red]creation of git username from email failed, skipping...[/bold red]"
         )
@@ -290,3 +296,25 @@ def get_github_emails():
         print("   gh auth refresh -s user:email")
         print(e.stderr)
         return []
+
+def auth_logout():
+    if is_logged_in():
+        print(f"GitHub CLI is logged in. Logging out...")
+        logout()
+    else:
+        print(f"No GitHub CLI login detected.")
+
+def is_logged_in():
+    try:
+        print(f"Check if user is logged in...")
+        subprocess.run(["gh", "auth", "status"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+def logout():
+    try:
+        subprocess.run(["gh", "auth", "logout"], check=True)
+        print(f"Logged out successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Logout failed:", e)

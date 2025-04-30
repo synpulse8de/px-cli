@@ -1,23 +1,13 @@
-from typing import Annotated
-
 import typer
+from typing_extensions import Annotated
 
-from pulse8_core_cli.backend_fastapi.functions import (
-    backend_fastapi_update,
-    backend_fastapi_create,
-    backend_fastapi_release,
+from pulsex_core_cli.backend.functions import (
+    backend_create,
+    backend_update,
+    backend_release,
 )
 
 app = typer.Typer()
-
-
-@app.command()
-def dev():
-    """
-    Develop on an existing backend
-    """
-    print(f"[WIP]...")
-
 
 @app.command()
 def create(
@@ -37,9 +27,7 @@ def create(
     """
     Create a new backend
     """
-    backend_fastapi_create(
-        create_remote_repository, answers_file, defaults, skip_answered, ssh
-    )
+    backend_create(create_remote_repository, answers_file, defaults, skip_answered, ssh)
 
 
 @app.command()
@@ -53,21 +41,13 @@ def update(
     """
     Update an existing backend
     """
-    backend_fastapi_update(answers_file, defaults, skip_answered)
+    backend_update(answers_file, defaults, skip_answered)
 
 
 @app.command()
 def delete():
     """
     Delete an existing backend
-    """
-    print(f"[WIP]...")
-
-
-@app.command()
-def deploy():
-    """
-    Start the deployment workflow for an existing backend
     """
     print(f"[WIP]...")
 
@@ -89,4 +69,4 @@ def release(
     """
     Create a GitHub release for an existing backend
     """
-    backend_fastapi_release(version, title, major, minor, patch)
+    backend_release(version, title, major, minor, patch)

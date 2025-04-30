@@ -9,14 +9,14 @@ from uuid import uuid4
 import yaml
 from rich import print
 
-from pulse8_core_cli.shared.constants import (
+from pulsex_core_cli.shared.constants import (
     ENV_GITHUB_USER,
     ENV_JFROG_TOKEN,
     ENV_JFROG_USER,
     ENV_GITHUB_TOKEN,
     ENV_GITHUB_GHCR_TOKEN,
 )
-from pulse8_core_cli.shared.platform_discovery import is_windows
+from pulsex_core_cli.shared.platform_discovery import is_windows
 
 
 def get_env_variables(silent: bool = False) -> dict[str, any]:
@@ -36,7 +36,7 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         except Exception as e:
             print(f"[red]Error reading from GitHub CLI hosts.yml[/red]")
             print(
-                f"[italic]Hint: Please try to reauthorize using [bold]pulse8 auth login[/bold][/italic]"
+                f"[italic]Hint: Please try to reauthorize using [bold]pulseX auth login[/bold][/italic]"
             )
             raise e
         config_github_cli_file_raw: str
@@ -66,7 +66,7 @@ def get_env_variables(silent: bool = False) -> dict[str, any]:
         }
     except KeyError:
         print(
-            "[bold red]Error retrieving environment variables - please use 'pulse8 auth login'[/bold red]"
+            "[bold red]Error retrieving environment variables - please use 'pulseX auth login'[/bold red]"
         )
         exit(1)
 
@@ -87,7 +87,7 @@ def get_env_variables_small(silent: bool = False) -> dict[str, any]:
         except Exception as e:
             print(f"[red]Error reading from GitHub CLI hosts.yml[/red]")
             print(
-                f"[italic]Hint: Please try to reauthorize using [bold]pulse8 auth login[/bold][/italic]"
+                f"[italic]Hint: Please try to reauthorize using [bold]pulseX auth login[/bold][/italic]"
             )
             raise e
         config_github_cli_file_raw: str
@@ -103,7 +103,7 @@ def get_env_variables_small(silent: bool = False) -> dict[str, any]:
         }
     except KeyError:
         print(
-            "[bold red]Error retrieving environment variables - please use 'pulse8 auth login'[/bold red]"
+            "[bold red]Error retrieving environment variables - please use 'pulseX auth login'[/bold red]"
         )
         exit(1)
 
@@ -112,7 +112,7 @@ def git_init(callback_after_git_init):
     if callback_after_git_init is not None:
         callback_after_git_init()
     os.system("git add .")
-    os.system('git commit -m "[PULSE8] Generated using Pulse8 Core Template" --quiet')
+    os.system('git commit -m "[PulseX] Generated using PulseX Core Template" --quiet')
     os.system("git branch -M main")
     current_git_path = os.getcwd().replace("\\", "/")
     os.system(f"git config --global --add safe.directory {current_git_path}")
@@ -141,7 +141,7 @@ def git_create_remote(
 
 
 def get_cli_dir() -> Path:
-    cli_dir: Path = Path(f"{Path.home()}/.pulse8")
+    cli_dir: Path = Path(f"{Path.home()}/.pulseX")
     cli_dir.mkdir(parents=True, exist_ok=True)
     return cli_dir
 
@@ -205,9 +205,9 @@ def rename_template_tmp_dir(tmp_dir, new_name):
 
 def get_maven_wrapper_executable():
     if is_windows():
-        return "mvnw.cmd"
+        return "mvn"
     else:
-        return "./mvnw"
+        return "mvn"
 
 
 def execute_shell_command(
