@@ -27,7 +27,9 @@ jobs:
         run: |
           poetry config repositories.nexus https://nexus.profect.de/repository/test-python/
           poetry config http-basic.nexus "${{ secrets.NEXUS_USERNAME }}" "${{ secrets.NEXUS_PASSWORD }}"
-          
+
+      - name: Check poetry config
+        run: poetry config --list
 
       - name: Build & publish to Nexus
         run: poetry publish --build --repository nexus
