@@ -28,4 +28,4 @@ jobs:
           poetry config repositories.nexus https://nexus.profect.de/repository/test-python/
 
       - name: Build & publish to Nexus
-        run: poetry publish --build --repository nexus --username "${{ secrets.NEXUS_USERNAME }}" --password "${{ secrets.NEXUS_PASSWORD }}"
+        run: poetry publish --build --repository nexus --username python_cicd_user --password 'Sy4hW+H2A?""Eg45'
