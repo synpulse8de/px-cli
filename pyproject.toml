@@ -32,3 +32,6 @@ pytest = "8.3.5"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.repositories.nexus]
+url = "https://nexus.profect.de/repository/test-python/"

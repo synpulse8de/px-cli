@@ -45,7 +45,11 @@ def auth_login(email: str) -> None:
         )
         exit(1)
 
-    print("[bold]authenticate against github.com...[bold]")
+    if is_email_authenticated(email):
+        print("Already logged in with email...")
+        exit(0)
+
+    print("[bold]authenticate against github.com...  - Current authenticated account could be overwritten[bold]")
     os.system(
         "gh auth login --insecure-storage --git-protocol=https --hostname=github.com --web --scopes \"user:email\""
     )
@@ -297,12 +301,27 @@ def get_github_emails():
         print(e.stderr)
         return []
 
-def auth_logout():
+def auth_logout(email):
     if is_logged_in():
         print(f"GitHub CLI is logged in. Logging out...")
         logout()
     else:
         print(f"No GitHub CLI login detected.")
+
+def is_email_authenticated(email):
+    if not is_logged_in():
+        print("❌ Not logged in to GitHub CLI.")
+        return False
+
+    emails = get_github_emails()
+    email = email.lower().strip()
+
+    if email in emails:
+        print(f"✅ Email '{email}' is authenticated with GitHub.")
+        return True
+    else:
+        print(f"❌ Email '{email}' is NOT authenticated with GitHub.")
+        return False
 
 def is_logged_in():
     try:
